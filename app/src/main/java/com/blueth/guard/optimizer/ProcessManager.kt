@@ -1,0 +1,1 @@
+// Smart background process management
