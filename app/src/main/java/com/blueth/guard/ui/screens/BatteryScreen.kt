@@ -3,6 +3,7 @@ package com.blueth.guard.ui.screens
 import android.text.format.DateUtils
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,7 +51,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -293,6 +299,26 @@ private fun OverviewTab(
             }
         }
 
+        // Battery History Graph
+        if (batteryHistory.size >= 2) {
+            item {
+                Text(
+                    "Battery History (24h)",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            item {
+                BatteryHistoryChart(
+                    history = batteryHistory,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                )
+            }
+        }
+
         // Recommendations
         if (health.recommendations.isNotEmpty()) {
             item {
@@ -342,6 +368,92 @@ private fun OverviewTab(
         }
 
         item { Spacer(Modifier.height(8.dp)) }
+    }
+}
+
+// ── BATTERY HISTORY CHART ─────────────────────────────────────────────────────
+
+@Composable
+private fun BatteryHistoryChart(
+    history: List<com.blueth.guard.data.local.BatterySnapshot>,
+    modifier: Modifier = Modifier
+) {
+    val lineColor = BluePrimary
+    val gridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val chargingColor = RiskSafe.copy(alpha = 0.15f)
+
+    val sorted = remember(history) { history.sortedBy { it.timestamp } }
+    val minTime = sorted.first().timestamp
+    val maxTime = sorted.last().timestamp
+    val timeRange = (maxTime - minTime).coerceAtLeast(1L)
+
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 36.dp, end = 16.dp, top = 16.dp, bottom = 28.dp)
+        ) {
+            val w = size.width
+            val h = size.height
+
+            // Horizontal grid lines at 0%, 25%, 50%, 75%, 100%
+            val dashEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f))
+            for (i in 0..4) {
+                val y = h - (i / 4f) * h
+                drawLine(
+                    color = gridColor,
+                    start = Offset(0f, y),
+                    end = Offset(w, y),
+                    pathEffect = dashEffect,
+                    strokeWidth = 1f
+                )
+            }
+
+            // Charging segments background
+            for (i in 0 until sorted.size - 1) {
+                if (sorted[i].isCharging) {
+                    val x1 = ((sorted[i].timestamp - minTime).toFloat() / timeRange) * w
+                    val x2 = ((sorted[i + 1].timestamp - minTime).toFloat() / timeRange) * w
+                    drawRect(
+                        color = chargingColor,
+                        topLeft = Offset(x1, 0f),
+                        size = androidx.compose.ui.geometry.Size(x2 - x1, h)
+                    )
+                }
+            }
+
+            // Battery level line path
+            val path = Path()
+            sorted.forEachIndexed { index, snapshot ->
+                val x = ((snapshot.timestamp - minTime).toFloat() / timeRange) * w
+                val y = h - (snapshot.levelPercent / 100f) * h
+                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+
+            drawPath(
+                path = path,
+                color = lineColor,
+                style = Stroke(
+                    width = 3f,
+                    cap = StrokeCap.Round
+                )
+            )
+
+            // Data point dots
+            sorted.forEach { snapshot ->
+                val x = ((snapshot.timestamp - minTime).toFloat() / timeRange) * w
+                val y = h - (snapshot.levelPercent / 100f) * h
+                drawCircle(
+                    color = lineColor,
+                    radius = 4f,
+                    center = Offset(x, y)
+                )
+            }
+        }
     }
 }
 
