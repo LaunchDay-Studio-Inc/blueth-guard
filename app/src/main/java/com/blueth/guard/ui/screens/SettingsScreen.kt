@@ -1,5 +1,7 @@
 package com.blueth.guard.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,37 +14,63 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Source
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blueth.guard.BuildConfig
+import com.blueth.guard.R
+import com.blueth.guard.data.prefs.ScanInterval
+import com.blueth.guard.data.prefs.ThemeMode
+import com.blueth.guard.ui.viewmodel.SettingsViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
-    var scanScheduleEnabled by remember { mutableStateOf(false) }
-    var selectedTheme by remember { mutableIntStateOf(0) } // 0=dark, 1=light, 2=system
-    val themeLabels = listOf("Dark", "Light", "System")
+fun SettingsScreen(
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val scanScheduleEnabled by viewModel.scanScheduleEnabled.collectAsStateWithLifecycle()
+    val scanInterval by viewModel.scanInterval.collectAsStateWithLifecycle()
+    val realTimeProtection by viewModel.realTimeProtection.collectAsStateWithLifecycle()
+    val installScanEnabled by viewModel.installScanEnabled.collectAsStateWithLifecycle()
+    val notificationEnabled by viewModel.notificationEnabled.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     LazyColumn(
         modifier = Modifier
@@ -53,28 +81,10 @@ fun SettingsScreen() {
         item {
             Spacer(Modifier.height(16.dp))
             Text(
-                "Settings",
+                stringResource(R.string.settings_title),
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )
-        }
-
-        // Scan Schedule
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    SettingsToggleRow(
-                        icon = Icons.Filled.Schedule,
-                        title = "Scheduled Scan",
-                        subtitle = "Automatically scan apps weekly",
-                        checked = scanScheduleEnabled,
-                        onCheckedChange = { scanScheduleEnabled = it }
-                    )
-                }
-            }
         }
 
         // Theme
@@ -93,7 +103,7 @@ fun SettingsScreen() {
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "Theme",
+                            stringResource(R.string.settings_theme),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -103,12 +113,18 @@ fun SettingsScreen() {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        themeLabels.forEachIndexed { index, label ->
+                        ThemeMode.entries.forEach { mode ->
+                            val label = when (mode) {
+                                ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
+                                ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                                ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
+                            }
+                            val selected = themeMode == mode
                             Card(
-                                onClick = { selectedTheme = index },
+                                onClick = { viewModel.setThemeMode(mode) },
                                 modifier = Modifier.weight(1f),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = if (selectedTheme == index)
+                                    containerColor = if (selected)
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                                     else MaterialTheme.colorScheme.surface
                                 )
@@ -118,15 +134,175 @@ fun SettingsScreen() {
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 12.dp),
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    textAlign = TextAlign.Center,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = if (selectedTheme == index) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (selectedTheme == index)
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (selected)
                                         MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        // Scan Schedule
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SettingsToggleRow(
+                        icon = Icons.Filled.Schedule,
+                        title = stringResource(R.string.settings_scheduled_scan),
+                        subtitle = stringResource(R.string.settings_scheduled_scan_desc),
+                        checked = scanScheduleEnabled,
+                        onCheckedChange = { viewModel.setScanScheduleEnabled(it) }
+                    )
+                    if (scanScheduleEnabled) {
+                        Spacer(Modifier.height(12.dp))
+                        var expanded by remember { mutableStateOf(false) }
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = it }
+                        ) {
+                            OutlinedTextField(
+                                value = when (scanInterval) {
+                                    ScanInterval.DAILY -> stringResource(R.string.settings_interval_daily)
+                                    ScanInterval.WEEKLY -> stringResource(R.string.settings_interval_weekly)
+                                    ScanInterval.MONTHLY -> stringResource(R.string.settings_interval_monthly)
+                                    ScanInterval.MANUAL -> stringResource(R.string.settings_interval_manual)
+                                },
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text(stringResource(R.string.settings_scan_interval)) },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                ScanInterval.entries.filter { it != ScanInterval.MANUAL }.forEach { interval ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                when (interval) {
+                                                    ScanInterval.DAILY -> stringResource(R.string.settings_interval_daily)
+                                                    ScanInterval.WEEKLY -> stringResource(R.string.settings_interval_weekly)
+                                                    ScanInterval.MONTHLY -> stringResource(R.string.settings_interval_monthly)
+                                                    ScanInterval.MANUAL -> stringResource(R.string.settings_interval_manual)
+                                                }
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.setScanInterval(interval)
+                                            expanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Real-time Protection
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SettingsToggleRow(
+                        icon = Icons.Filled.Shield,
+                        title = stringResource(R.string.settings_realtime_protection),
+                        subtitle = stringResource(R.string.settings_realtime_protection_desc),
+                        checked = realTimeProtection,
+                        onCheckedChange = { viewModel.setRealTimeProtection(it) }
+                    )
+                }
+            }
+        }
+
+        // Install Scan
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SettingsToggleRow(
+                        icon = Icons.Filled.BatteryAlert,
+                        title = stringResource(R.string.settings_install_scan),
+                        subtitle = stringResource(R.string.settings_install_scan_desc),
+                        checked = installScanEnabled,
+                        onCheckedChange = { viewModel.setInstallScanEnabled(it) }
+                    )
+                }
+            }
+        }
+
+        // Notifications
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SettingsToggleRow(
+                        icon = Icons.Filled.Notifications,
+                        title = stringResource(R.string.settings_notifications),
+                        subtitle = stringResource(R.string.settings_notifications_desc),
+                        checked = notificationEnabled,
+                        onCheckedChange = { viewModel.setNotificationEnabled(it) }
+                    )
+                }
+            }
+        }
+
+        // Export Report
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.Share,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.settings_export_report),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                stringResource(R.string.settings_export_report_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Button(
+                        onClick = {
+                            viewModel.shareReport(context, "{\"status\": \"No scan data yet\"}")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.settings_export_report))
                     }
                 }
             }
@@ -148,39 +324,59 @@ fun SettingsScreen() {
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "About",
+                            stringResource(R.string.settings_about),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                     }
                     Spacer(Modifier.height(12.dp))
 
-                    AboutRow("App Name", "Blueth Guard")
+                    AboutRow(stringResource(R.string.settings_about_version), BuildConfig.VERSION_NAME)
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 6.dp),
                         color = MaterialTheme.colorScheme.surface
                     )
-                    AboutRow("Version", BuildConfig.VERSION_NAME)
+                    AboutRow(stringResource(R.string.settings_about_build), BuildConfig.VERSION_CODE.toString())
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 6.dp),
                         color = MaterialTheme.colorScheme.surface
                     )
-                    AboutRow("Build", BuildConfig.VERSION_CODE.toString())
+                    AboutRow(stringResource(R.string.settings_about_developer), "LaunchDay Studio")
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 6.dp),
                         color = MaterialTheme.colorScheme.surface
                     )
-                    AboutRow("License", "GPL-3.0")
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 6.dp),
-                        color = MaterialTheme.colorScheme.surface
-                    )
-                    AboutRow("Developer", "LaunchDay Studio Inc")
+                    AboutRow(stringResource(R.string.settings_about_license), "GPL-3.0")
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/LaunchDay-Studio-Inc/blueth-guard"))
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(stringResource(R.string.settings_github))
+                        }
+                        Button(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/bJDGXc4DvW"))
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(stringResource(R.string.settings_discord))
+                        }
+                    }
                 }
             }
         }
 
-        // Open Source
+        // Open Source Licenses
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -196,7 +392,7 @@ fun SettingsScreen() {
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "Open Source Licenses",
+                            stringResource(R.string.settings_licenses),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -209,11 +405,13 @@ fun SettingsScreen() {
                     LicenseRow("Coil", "Apache 2.0")
                     LicenseRow("Kotlin Coroutines", "Apache 2.0")
                     LicenseRow("Material 3", "Apache 2.0")
+                    LicenseRow("DataStore", "Apache 2.0")
+                    LicenseRow("WorkManager", "Apache 2.0")
                 }
             }
         }
 
-        // Security info
+        // Privacy info
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -232,12 +430,12 @@ fun SettingsScreen() {
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(
-                            "Your Privacy Matters",
+                            stringResource(R.string.settings_privacy_title),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            "Blueth Guard is fully offline. No data is ever sent to any server. All analysis happens on your device.",
+                            stringResource(R.string.settings_privacy_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

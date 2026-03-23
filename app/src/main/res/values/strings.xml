@@ -202,4 +202,54 @@
     <!-- Battery: General -->
     <string name="battery_last_refreshed">Last refreshed:</string>
     <string name="battery_recommendation_header">Recommendations</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_scheduled_scan">Scheduled Scan</string>
+    <string name="settings_scheduled_scan_desc">Automatically scan apps on a schedule</string>
+    <string name="settings_scan_interval">Scan Interval</string>
+    <string name="settings_interval_daily">Daily</string>
+    <string name="settings_interval_weekly">Weekly</string>
+    <string name="settings_interval_monthly">Monthly</string>
+    <string name="settings_interval_manual">Manual</string>
+    <string name="settings_realtime_protection">Real-time Protection</string>
+    <string name="settings_realtime_protection_desc">Monitor for threats in the background</string>
+    <string name="settings_install_scan">Install Scan</string>
+    <string name="settings_install_scan_desc">Auto-scan newly installed apps</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_desc">Receive alerts for security events</string>
+    <string name="settings_export_report">Export Scan Report</string>
+    <string name="settings_export_report_desc">Share a JSON summary of your last scan</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_version">Version</string>
+    <string name="settings_about_build">Build</string>
+    <string name="settings_about_developer">Developer</string>
+    <string name="settings_about_license">License</string>
+    <string name="settings_github">GitHub</string>
+    <string name="settings_discord">Discord</string>
+    <string name="settings_licenses">Open Source Licenses</string>
+    <string name="settings_privacy_title">Your Privacy Matters</string>
+    <string name="settings_privacy_desc">Blueth Guard is fully offline. No data is ever sent to any server. All analysis happens on your device.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_welcome_title">Blueth Guard</string>
+    <string name="onboarding_welcome_desc">All-in-one security for your Android device.</string>
+    <string name="onboarding_welcome_tagline">No ads. No tracking. 100% offline.</string>
+    <string name="onboarding_permissions_title">Usage Access</string>
+    <string name="onboarding_permissions_desc">To detect battery-draining apps and monitor app behavior</string>
+    <string name="onboarding_permissions_grant">Grant Usage Access</string>
+    <string name="onboarding_permissions_granted">Access Granted</string>
+    <string name="onboarding_notifications_title">Stay Protected</string>
+    <string name="onboarding_notifications_desc">Get alerts when new apps are installed or suspicious activity is detected.</string>
+    <string name="onboarding_notifications_enable">Enable Notifications</string>
+    <string name="onboarding_notifications_enabled">Notifications Enabled</string>
+    <string name="onboarding_ready_title">You\'re All Set</string>
+    <string name="onboarding_ready_desc">Blueth Guard is ready to protect your device.</string>
+    <string name="onboarding_start">Start Scanning</string>
 </resources>
