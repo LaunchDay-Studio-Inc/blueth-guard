@@ -11,9 +11,11 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,9 +95,19 @@ fun SecurityScreen(
     val isScanning = scanState == ScanState.SCANNING
     val scanComplete = scanState == ScanState.COMPLETE
 
+    var selectedApp by remember { mutableStateOf<AppScanResult?>(null) }
+
     val totalApps = scanProgress?.total ?: 0
     val currentProgress = scanProgress?.current ?: 0
     val currentAppName = scanProgress?.currentApp ?: ""
+
+    // App detail bottom sheet
+    selectedApp?.let { app ->
+        AppDetailBottomSheet(
+            result = app,
+            onDismiss = { selectedApp = null }
+        )
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -243,7 +255,7 @@ fun SecurityScreen(
                     )
                 }
                 items(sortedResults, key = { it.appInfo.packageName }) { result ->
-                    ScanResultCard(result)
+                    ScanResultCard(result, onLongClick = { selectedApp = result })
                 }
             }
             // View Scan History button
@@ -499,8 +511,9 @@ private fun DeviceAdminWarningCard(admins: List<DeviceAdminAppInfo>) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ScanResultCard(result: AppScanResult) {
+private fun ScanResultCard(result: AppScanResult, onLongClick: () -> Unit = {}) {
     var expanded by remember { mutableStateOf(false) }
     val riskColor = when (result.threatAssessment.riskLevel) {
         RiskLevel.CRITICAL -> RiskCritical
@@ -518,7 +531,10 @@ private fun ScanResultCard(result: AppScanResult) {
     ) {
         Column(
             modifier = Modifier
-                .clickable { expanded = !expanded }
+                .combinedClickable(
+                    onClick = { expanded = !expanded },
+                    onLongClick = onLongClick
+                )
                 .padding(12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
