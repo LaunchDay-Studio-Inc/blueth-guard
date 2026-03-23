@@ -160,4 +160,46 @@
     <string name="rec_too_many_location">Too many apps have location access</string>
     <string name="rec_dev_options_enabled">Developer options enabled</string>
     <string name="rec_usb_debugging">USB debugging enabled</string>
+
+    <!-- Battery: Tabs -->
+    <string name="battery_tab_overview">Overview</string>
+    <string name="battery_tab_wakelocks">Wakelocks</string>
+    <string name="battery_tab_services">Services</string>
+    <string name="battery_tab_drain">Drain</string>
+
+    <!-- Battery: Health -->
+    <string name="battery_health_good">Good</string>
+    <string name="battery_health_degraded">Degraded</string>
+    <string name="battery_health_critical">Critical</string>
+
+    <!-- Battery: Wakelocks -->
+    <string name="battery_wakelock_header">Apps keeping your device awake</string>
+    <string name="battery_wakelock_empty">No significant wakelocks detected</string>
+
+    <!-- Battery: Services -->
+    <string name="battery_services_header">Running background services</string>
+    <string name="battery_services_empty">No background services detected</string>
+    <string name="battery_services_user">User Apps</string>
+    <string name="battery_services_system">System</string>
+
+    <!-- Battery: Drain -->
+    <string name="battery_drain_header">Battery drain estimates</string>
+    <string name="battery_drain_empty">No significant battery drain detected</string>
+
+    <!-- Battery: Severity -->
+    <string name="battery_severity_low">Low</string>
+    <string name="battery_severity_medium">Medium</string>
+    <string name="battery_severity_high">High</string>
+    <string name="battery_severity_critical">Critical</string>
+
+    <!-- Battery: Drain Categories -->
+    <string name="battery_drain_minimal">Minimal</string>
+    <string name="battery_drain_low">Low</string>
+    <string name="battery_drain_moderate">Moderate</string>
+    <string name="battery_drain_high">High</string>
+    <string name="battery_drain_extreme">Extreme</string>
+
+    <!-- Battery: General -->
+    <string name="battery_last_refreshed">Last refreshed:</string>
+    <string name="battery_recommendation_header">Recommendations</string>
 </resources>

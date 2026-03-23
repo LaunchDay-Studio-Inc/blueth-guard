@@ -99,7 +99,7 @@ Every "cleaner" and "antivirus" app on the Play Store is:
 | **2 — Security** | Scanner, tracker detection, sideload detector, device admin | ✅ Complete |
 | **3 — Optimizer** | Cache, processes, duplicates, bloatware, storage | ✅ Complete |
 | **4 — Privacy** | Room DB, permission monitor, network monitor, clipboard, install guard, privacy scorer | ✅ Complete |
-| **5 — Battery** | Wakelock deep scan, service monitor, drain ranking, battery health | 🔜 Next |
+| **5 — Battery** | Wakelock deep scan, service monitor, drain ranking, battery health | ✅ Done |
 | **6 — Polish** | UI animations, onboarding, F-Droid, Play Store | ⬜ Planned |
 
 ## Tech Stack
@@ -143,9 +143,10 @@ blueth-guard/
 │   │   ├── NetworkMonitor.kt, ClipboardGuard.kt
 │   │   ├── PrivacyScorer.kt, InstallGuardPrivacy.kt
 │   │   ├── InstallGuardReceiver.kt, InstallAction.kt
-│   ├── battery/          # Battery analysis (3 files)
+│   ├── battery/          # Battery analysis (4 files)
 │   │   ├── WakelockDetector.kt, ServiceMonitor.kt
-│   │   └── DrainRanker.kt
+│   │   ├── DrainRanker.kt
+│   │   └── BatteryHealthAnalyzer.kt
 │   ├── protection/       # Real-time protection (3 files)
 │   │   ├── InstallGuard.kt, DebugDetector.kt
 │   │   └── AccessibilityWatcher.kt
@@ -153,13 +154,13 @@ blueth-guard/
 │   │   ├── local/        # Database, DAOs, entities
 │   │   ├── model/        # Data models
 │   │   └── repository/   # App data repository
-│   ├── ui/               # Compose UI (13 files)
+│   ├── ui/               # Compose UI (14 files)
 │   │   ├── screens/      # 5 main screens
-│   │   ├── viewmodel/    # 4 ViewModels
+│   │   ├── viewmodel/    # 5 ViewModels
 │   │   ├── navigation/   # Bottom nav
 │   │   └── theme/        # Colors, typography
 │   └── di/               # Hilt modules
-└── 55 Kotlin files total
+└── 59 Kotlin files total
 ```
 
 ## Open Source Credits

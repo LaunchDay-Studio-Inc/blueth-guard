@@ -2,6 +2,7 @@ package com.blueth.guard.di
 
 import android.content.Context
 import androidx.room.Room
+import com.blueth.guard.data.local.BatterySnapshotDao
 import com.blueth.guard.data.local.BluethDatabase
 import com.blueth.guard.data.local.InstallEventDao
 import com.blueth.guard.data.local.NetworkEventDao
@@ -25,7 +26,8 @@ object DatabaseModule {
             context,
             BluethDatabase::class.java,
             "blueth_guard_db"
-        ).build()
+        ).fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
     }
 
     @Provides
@@ -43,4 +45,8 @@ object DatabaseModule {
     @Provides
     fun provideInstallEventDao(db: BluethDatabase): InstallEventDao =
         db.installEventDao()
+
+    @Provides
+    fun provideBatterySnapshotDao(db: BluethDatabase): BatterySnapshotDao =
+        db.batterySnapshotDao()
 }
