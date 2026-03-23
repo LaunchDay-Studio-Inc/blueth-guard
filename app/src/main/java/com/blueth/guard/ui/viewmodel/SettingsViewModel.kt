@@ -1,9 +1,9 @@
 package com.blueth.guard.ui.viewmodel
 
 import android.content.Context
-import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.blueth.guard.data.export.ReportExporter
 import com.blueth.guard.data.prefs.ScanInterval
 import com.blueth.guard.data.prefs.ThemeMode
 import com.blueth.guard.data.prefs.UserPreferences
@@ -19,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
-    private val scanScheduler: ScanScheduler
+    private val scanScheduler: ScanScheduler,
+    private val reportExporter: ReportExporter
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> = userPreferences.themeMode
@@ -83,12 +84,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { userPreferences.setNotificationEnabled(enabled) }
     }
 
-    fun shareReport(context: Context, reportJson: String) {
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/json"
-            putExtra(Intent.EXTRA_TEXT, reportJson)
-            putExtra(Intent.EXTRA_SUBJECT, "Blueth Guard Scan Report")
-        }
-        context.startActivity(Intent.createChooser(intent, "Share Scan Report"))
+    fun shareReport(context: Context) {
+        val report = reportExporter.generateReport()
+        reportExporter.shareReport(context, report)
     }
 }

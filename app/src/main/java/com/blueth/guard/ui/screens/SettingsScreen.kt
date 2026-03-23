@@ -298,7 +298,7 @@ fun SettingsScreen(
                     Spacer(Modifier.height(12.dp))
                     Button(
                         onClick = {
-                            viewModel.shareReport(context, "{\"status\": \"No scan data yet\"}")
+                            viewModel.shareReport(context)
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
