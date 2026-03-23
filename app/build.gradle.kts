@@ -104,4 +104,8 @@ dependencies {
 
     // Splash screen
     implementation("androidx.core:core-splashscreen:1.2.0")
+
+    // Glance (App Widget)
+    implementation("androidx.glance:glance-appwidget:1.2.0")
+    implementation("androidx.glance:glance-material3:1.2.0")
 }
