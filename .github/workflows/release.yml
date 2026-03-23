@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build-release:
     runs-on: ubuntu-latest
@@ -30,10 +33,9 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           mv app/build/outputs/apk/release/*.apk app/build/outputs/apk/release/blueth-guard-${VERSION}.apk
 
-      - name: Create GitHub Release
+      - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
           files: app/build/outputs/apk/release/blueth-guard-*.apk
-          generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
