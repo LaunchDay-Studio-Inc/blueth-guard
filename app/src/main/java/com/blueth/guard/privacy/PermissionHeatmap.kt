@@ -1,1 +1,1 @@
-// Visual permission overview
+// Deprecated: Replaced by PermissionMonitor.kt

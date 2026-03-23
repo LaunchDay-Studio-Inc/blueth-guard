@@ -60,4 +60,104 @@
     <string name="optimizer_filter_manufacturer">Manufacturer</string>
     <string name="optimizer_filter_preinstalled">Preinstalled</string>
     <string name="optimizer_no_bloatware">No bloatware detected</string>
+
+    <!-- Privacy: Tabs -->
+    <string name="privacy_tab_overview">Overview</string>
+    <string name="privacy_tab_permissions">Permissions</string>
+    <string name="privacy_tab_network">Network</string>
+    <string name="privacy_tab_clipboard">Clipboard</string>
+    <string name="privacy_tab_installs">Installs</string>
+
+    <!-- Privacy: Score -->
+    <string name="privacy_score_title">Your Privacy Score</string>
+    <string name="privacy_score_format">%1$d/100</string>
+
+    <!-- Privacy: Overview -->
+    <string name="privacy_camera_access">Camera Access</string>
+    <string name="privacy_location_access">Location Access</string>
+    <string name="privacy_sideloaded">Sideloaded</string>
+    <string name="privacy_high_risk">High Risk</string>
+    <string name="privacy_top_recommendations">Top Recommendations</string>
+    <string name="privacy_most_intrusive">Most Intrusive Apps</string>
+
+    <!-- Privacy: Permissions -->
+    <string name="privacy_permission_heatmap">Permission Heatmap</string>
+    <string name="privacy_permission_heatmap_desc">Tap a row to see permission details</string>
+    <string name="privacy_filter_all">All</string>
+    <string name="privacy_filter_dangerous">Dangerous Only</string>
+    <string name="privacy_filter_recent">Recently Changed</string>
+    <string name="privacy_scan_permissions">Scan Permissions</string>
+    <string name="privacy_permission_timeline">Permission Timeline</string>
+    <string name="privacy_no_permission_changes">No permission changes detected yet. Tap Scan to check.</string>
+    <string name="privacy_most_dangerous_apps">Most Dangerous Apps</string>
+    <string name="privacy_granted">Granted</string>
+    <string name="privacy_revoked">Revoked</string>
+    <string name="privacy_not_used">Not used</string>
+    <string name="privacy_dangerous_perms_format">%1$d/%2$d dangerous permissions</string>
+
+    <!-- Privacy: Permission Groups -->
+    <string name="perm_group_camera">Camera</string>
+    <string name="perm_group_microphone">Microphone</string>
+    <string name="perm_group_location">Location</string>
+    <string name="perm_group_contacts">Contacts</string>
+    <string name="perm_group_sms">SMS</string>
+    <string name="perm_group_phone">Phone</string>
+    <string name="perm_group_calendar">Calendar</string>
+    <string name="perm_group_sensors">Body Sensors</string>
+    <string name="perm_group_storage">Storage</string>
+    <string name="perm_group_nearby">Nearby Devices</string>
+
+    <!-- Privacy: Network -->
+    <string name="privacy_total_data_usage">Total Data Usage</string>
+    <string name="privacy_uploaded">Uploaded</string>
+    <string name="privacy_downloaded">Downloaded</string>
+    <string name="privacy_apps_used_network">%1$d apps used network</string>
+    <string name="privacy_grant_usage_access">Grant Usage Access to see network stats</string>
+    <string name="privacy_refresh_network">Refresh Network Stats</string>
+    <string name="privacy_suspicious_activity">Suspicious Activity</string>
+    <string name="privacy_top_data_consumers">Top Data Consumers</string>
+    <string name="privacy_no_network_data">No network data collected yet. Tap Refresh to collect.</string>
+    <string name="privacy_time_24h">24h</string>
+    <string name="privacy_time_7d">7d</string>
+    <string name="privacy_time_30d">30d</string>
+
+    <!-- Privacy: Clipboard -->
+    <string name="privacy_clipboard_monitoring">Clipboard Monitoring</string>
+    <string name="privacy_clipboard_active">Active — monitoring clipboard changes</string>
+    <string name="privacy_clipboard_inactive">Inactive — tap to start monitoring</string>
+    <string name="privacy_events">Events</string>
+    <string name="privacy_sensitive">Sensitive</string>
+    <string name="privacy_recent_events">Recent Events</string>
+    <string name="privacy_clear_history">Clear History</string>
+    <string name="privacy_no_clipboard_events">No clipboard events captured yet.</string>
+    <string name="privacy_start_monitoring_hint">Start monitoring to capture clipboard events.</string>
+    <string name="privacy_clipboard_notice">Clipboard data is stored in memory only and never saved to disk.</string>
+
+    <!-- Privacy: Installs -->
+    <string name="privacy_install_activity">Install Activity (30 days)</string>
+    <string name="privacy_installs">Installs</string>
+    <string name="privacy_updates">Updates</string>
+    <string name="privacy_removed">Removed</string>
+    <string name="privacy_sideloaded_count">%1$d sideloaded apps</string>
+    <string name="privacy_installed">Installed</string>
+    <string name="privacy_updated">Updated</string>
+    <string name="privacy_no_install_events">No install events recorded yet.</string>
+    <string name="privacy_filter_installs">Installs</string>
+    <string name="privacy_filter_updates">Updates</string>
+    <string name="privacy_filter_uninstalls">Uninstalls</string>
+    <string name="privacy_filter_sideloaded">Sideloaded</string>
+
+    <!-- Install Guard Notifications -->
+    <string name="install_guard_channel">Install Guard</string>
+    <string name="install_guard_installed">%1$s installed — Risk: %2$s</string>
+    <string name="install_guard_updated">%1$s updated — Risk: %2$s</string>
+    <string name="install_guard_tap_details">Tap to view details in Blueth Guard</string>
+
+    <!-- Privacy: Recommendations -->
+    <string name="rec_review_permissions">Review %1$s permissions</string>
+    <string name="rec_consider_uninstall">Consider uninstalling %1$s</string>
+    <string name="rec_sms_internet_warning">Warning: %1$s can read SMS</string>
+    <string name="rec_too_many_location">Too many apps have location access</string>
+    <string name="rec_dev_options_enabled">Developer options enabled</string>
+    <string name="rec_usb_debugging">USB debugging enabled</string>
 </resources>
