@@ -43,9 +43,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.blueth.guard.R
 import com.blueth.guard.data.local.ScanHistoryEntry
 import com.blueth.guard.ui.theme.BluePrimary
 import com.blueth.guard.ui.theme.RiskCritical
@@ -72,7 +74,7 @@ fun ScanHistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Scan History") },
+                title = { Text(stringResource(R.string.scan_history_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -81,7 +83,7 @@ fun ScanHistoryScreen(
                 actions = {
                     if (entries.isNotEmpty()) {
                         IconButton(onClick = { viewModel.clearHistory() }) {
-                            Icon(Icons.Filled.DeleteSweep, "Clear History")
+                            Icon(Icons.Filled.DeleteSweep, stringResource(R.string.scan_history_clear))
                         }
                     }
                 },
@@ -137,12 +139,12 @@ private fun EmptyHistoryContent(modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                "No scan history yet",
+                stringResource(R.string.scan_history_empty),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                "Run your first scan to see results here",
+                stringResource(R.string.scan_history_empty_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
@@ -265,8 +267,8 @@ private fun TimelineItem(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     StatLabel("Apps", entry.totalAppsScanned.toString())
-                    StatLabel("Threats", entry.threatsFound.toString())
-                    StatLabel("Trackers", entry.trackersFound.toString())
+                    StatLabel(stringResource(R.string.scan_history_threats), entry.threatsFound.toString())
+                    StatLabel(stringResource(R.string.scan_history_trackers), entry.trackersFound.toString())
                 }
 
                 // Expanded: flagged apps
@@ -275,7 +277,7 @@ private fun TimelineItem(
                     val flaggedApps = parseFlaggedApps(entry.flaggedApps)
                     if (flaggedApps.isNotEmpty()) {
                         Text(
-                            "Flagged Apps",
+                            stringResource(R.string.scan_history_flagged_apps),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -315,14 +317,14 @@ private fun TimelineItem(
                         }
                         if (flaggedApps.size > 10) {
                             Text(
-                                "+ ${flaggedApps.size - 10} more",
+                                stringResource(R.string.scan_history_more_format, flaggedApps.size - 10),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
                     } else {
                         Text(
-                            "All apps passed scan",
+                            stringResource(R.string.scan_history_all_passed),
                             style = MaterialTheme.typography.bodySmall,
                             color = RiskSafe
                         )

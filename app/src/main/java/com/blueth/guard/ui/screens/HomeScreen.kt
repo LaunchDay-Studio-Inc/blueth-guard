@@ -67,12 +67,14 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.blueth.guard.R
 import com.blueth.guard.ui.theme.BluePrimary
 import com.blueth.guard.ui.theme.RiskCritical
 import com.blueth.guard.ui.theme.RiskHigh
@@ -175,13 +177,13 @@ private fun HeaderSection(onNavigateToSettings: () -> Unit) {
     ) {
         Column {
             Text(
-                text = "Blueth Guard",
+                text = stringResource(R.string.home_title),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "Device Health",
+                text = stringResource(R.string.home_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -291,14 +293,14 @@ private fun ScoreRingSection(state: DashboardState) {
         val context = LocalContext.current
         val lastScanText = when {
             state.isLoading -> ""
-            state.lastScanTime != null -> "Last scan: ${
+            state.lastScanTime != null -> stringResource(R.string.home_last_scan_format,
                 DateUtils.getRelativeTimeSpanString(
                     state.lastScanTime,
                     System.currentTimeMillis(),
                     DateUtils.MINUTE_IN_MILLIS
                 )
-            }"
-            else -> "Never scanned"
+            )
+            else -> stringResource(R.string.home_never_scanned)
         }
 
         if (lastScanText.isNotEmpty()) {
@@ -321,7 +323,7 @@ private fun FirstScanButton(onNavigateToSecurity: () -> Unit) {
     ) {
         Icon(Icons.Filled.Security, contentDescription = null)
         Spacer(Modifier.width(8.dp))
-        Text("Start Security Scan", fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.home_start_scan), fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -336,19 +338,19 @@ private fun QuickActionsRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         QuickActionChip(
-            label = "Quick Scan",
+            label = stringResource(R.string.home_quick_scan),
             icon = Icons.Filled.Security,
             onClick = onNavigateToSecurity,
             modifier = Modifier.weight(1f)
         )
         QuickActionChip(
-            label = "Battery",
+            label = stringResource(R.string.home_battery),
             icon = Icons.Filled.Battery4Bar,
             onClick = onNavigateToBattery,
             modifier = Modifier.weight(1f)
         )
         QuickActionChip(
-            label = "Privacy",
+            label = stringResource(R.string.home_privacy),
             icon = Icons.Filled.Lock,
             onClick = onNavigateToPrivacy,
             modifier = Modifier.weight(1f)
@@ -514,18 +516,18 @@ private fun ModuleCard(
 @Composable
 private fun SecurityCard(state: DashboardState, onClick: () -> Unit) {
     val (value, subtitle, color) = when {
-        state.securityError -> Triple("Error", "Unable to load", MaterialTheme.colorScheme.onSurfaceVariant)
-        state.lastScanTime == null -> Triple("—", "Not scanned", MaterialTheme.colorScheme.onSurfaceVariant)
+        state.securityError -> Triple(stringResource(R.string.home_error), stringResource(R.string.home_unable_to_load), MaterialTheme.colorScheme.onSurfaceVariant)
+        state.lastScanTime == null -> Triple("—", stringResource(R.string.home_not_scanned), MaterialTheme.colorScheme.onSurfaceVariant)
         state.riskyAppsCount > 0 -> Triple(
             "${100 - (state.riskyAppsCount * 10).coerceAtMost(100)}",
-            "${state.riskyAppsCount} threats",
+            stringResource(R.string.home_threats_format, state.riskyAppsCount),
             RiskHigh
         )
-        else -> Triple("100", "All clear", RiskSafe)
+        else -> Triple("100", stringResource(R.string.home_all_clear), RiskSafe)
     }
     ModuleCard(
         icon = Icons.Filled.Shield,
-        title = "Security",
+        title = stringResource(R.string.home_security),
         value = value,
         subtitle = subtitle,
         indicatorColor = color,
@@ -536,8 +538,8 @@ private fun SecurityCard(state: DashboardState, onClick: () -> Unit) {
 @Composable
 private fun PrivacyCard(state: DashboardState, onClick: () -> Unit) {
     val (value, subtitle, color) = when {
-        state.privacyError -> Triple("Error", "Unable to load", MaterialTheme.colorScheme.onSurfaceVariant)
-        state.privacyScore == 0 && state.lastScanTime == null -> Triple("—", "Not analyzed", MaterialTheme.colorScheme.onSurfaceVariant)
+        state.privacyError -> Triple(stringResource(R.string.home_error), stringResource(R.string.home_unable_to_load), MaterialTheme.colorScheme.onSurfaceVariant)
+        state.privacyScore == 0 && state.lastScanTime == null -> Triple("—", stringResource(R.string.home_not_analyzed), MaterialTheme.colorScheme.onSurfaceVariant)
         else -> {
             val c = when {
                 state.privacyScore >= 75 -> RiskSafe
@@ -546,14 +548,14 @@ private fun PrivacyCard(state: DashboardState, onClick: () -> Unit) {
             }
             Triple(
                 "${state.privacyScore}",
-                "${state.appsWithDangerousPermissions} high-risk apps",
+                stringResource(R.string.home_high_risk_apps_format, state.appsWithDangerousPermissions),
                 c
             )
         }
     }
     ModuleCard(
         icon = Icons.Filled.Lock,
-        title = "Privacy",
+        title = stringResource(R.string.home_privacy),
         value = value,
         subtitle = subtitle,
         indicatorColor = color,
@@ -564,8 +566,8 @@ private fun PrivacyCard(state: DashboardState, onClick: () -> Unit) {
 @Composable
 private fun BatteryCard(state: DashboardState, onClick: () -> Unit) {
     val (subtitle, color) = when {
-        state.batteryError -> "Unable to load" to MaterialTheme.colorScheme.onSurfaceVariant
-        state.isCharging -> "Charging" to RiskSafe
+        state.batteryError -> stringResource(R.string.home_unable_to_load) to MaterialTheme.colorScheme.onSurfaceVariant
+        state.isCharging -> stringResource(R.string.home_charging) to RiskSafe
         state.topDrainer != null -> state.topDrainer to MaterialTheme.colorScheme.onSurfaceVariant
         else -> state.batteryHealth to MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -579,8 +581,8 @@ private fun BatteryCard(state: DashboardState, onClick: () -> Unit) {
 
     ModuleCard(
         icon = if (state.isCharging) Icons.Filled.BatteryChargingFull else Icons.Filled.Battery4Bar,
-        title = "Battery",
-        value = if (state.batteryError) "Error" else "${state.batteryLevel}%",
+        title = stringResource(R.string.home_battery),
+        value = if (state.batteryError) stringResource(R.string.home_error) else "${state.batteryLevel}%",
         subtitle = subtitle,
         indicatorColor = batteryColor,
         onClick = onClick
@@ -591,8 +593,8 @@ private fun BatteryCard(state: DashboardState, onClick: () -> Unit) {
 private fun StorageCard(state: DashboardState, onClick: () -> Unit) {
     val context = LocalContext.current
     val (value, subtitle) = when {
-        state.storageError -> "Error" to "Unable to load"
-        state.totalStorage == 0L -> "—" to "Not analyzed"
+        state.storageError -> stringResource(R.string.home_error) to stringResource(R.string.home_unable_to_load)
+        state.totalStorage == 0L -> "—" to stringResource(R.string.home_not_analyzed)
         else -> {
             val used = Formatter.formatShortFileSize(context, state.usedStorage)
             val total = Formatter.formatShortFileSize(context, state.totalStorage)
@@ -613,7 +615,7 @@ private fun StorageCard(state: DashboardState, onClick: () -> Unit) {
 
     ModuleCard(
         icon = Icons.Filled.Storage,
-        title = "Storage",
+        title = stringResource(R.string.home_storage),
         value = value,
         subtitle = subtitle,
         indicatorColor = color,
@@ -660,16 +662,16 @@ private fun ProtectionBanner(state: DashboardState, onNavigateToSettings: () -> 
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (state.protectionEnabled) "Real-time Protection Active" else "Protection Disabled",
+                    text = if (state.protectionEnabled) stringResource(R.string.home_protection_active) else stringResource(R.string.home_protection_disabled),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = if (state.protectionEnabled) {
-                        if (state.installScanEnabled) "Install scanning enabled" else "Monitoring active"
+                        if (state.installScanEnabled) stringResource(R.string.home_install_scanning_enabled) else stringResource(R.string.home_monitoring_active)
                     } else {
-                        "Tap to enable protection"
+                        stringResource(R.string.home_tap_to_enable)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -681,7 +683,7 @@ private fun ProtectionBanner(state: DashboardState, onNavigateToSettings: () -> 
                     colors = ButtonDefaults.buttonColors(containerColor = RiskMedium),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Enable")
+                    Text(stringResource(R.string.home_enable))
                 }
             }
         }
@@ -698,21 +700,21 @@ private fun AlertsSection(
     val alerts = buildList {
         if (state.appsWithDangerousPermissions > 0) {
             add(AlertItem(
-                text = "${state.appsWithDangerousPermissions} apps with high-risk permissions",
+                text = stringResource(R.string.home_high_risk_perms_format, state.appsWithDangerousPermissions),
                 color = RiskHigh,
                 onClick = onNavigateToPrivacy
             ))
         }
         if (state.hasScheduledScans && state.lastScanTime == null) {
             add(AlertItem(
-                text = "Scheduled scan overdue",
+                text = stringResource(R.string.home_scan_overdue),
                 color = RiskMedium,
                 onClick = onNavigateToSettings
             ))
         }
         if (state.temperature > 38f) {
             add(AlertItem(
-                text = "Battery temperature elevated: ${state.temperature}°C",
+                text = stringResource(R.string.home_battery_temp_format, state.temperature),
                 color = if (state.temperature > 42f) RiskCritical else RiskHigh,
                 onClick = onNavigateToBattery
             ))
@@ -723,7 +725,7 @@ private fun AlertsSection(
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = "Alerts",
+            text = stringResource(R.string.home_alerts),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground

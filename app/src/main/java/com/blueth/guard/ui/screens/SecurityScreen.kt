@@ -61,11 +61,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.blueth.guard.R
 import com.blueth.guard.scanner.AppScanResult
 import com.blueth.guard.scanner.DeviceAdminAppInfo
 import com.blueth.guard.scanner.RiskLevel
@@ -104,7 +106,7 @@ fun SecurityScreen(
         item {
             Spacer(Modifier.height(16.dp))
             Text(
-                "Security",
+                stringResource(R.string.security_title),
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -137,7 +139,7 @@ fun SecurityScreen(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Scanning $currentAppName... $currentProgress/$totalApps",
+                        stringResource(R.string.security_scanning_format, currentAppName, currentProgress, totalApps),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -176,19 +178,19 @@ fun SecurityScreen(
                     SummaryChip(
                         modifier = Modifier.weight(1f),
                         count = safeApps.size + lowApps.size,
-                        label = "Safe",
+                        label = stringResource(R.string.security_safe),
                         color = RiskSafe
                     )
                     SummaryChip(
                         modifier = Modifier.weight(1f),
                         count = mediumApps.size,
-                        label = "Attention",
+                        label = stringResource(R.string.security_attention),
                         color = RiskMedium
                     )
                     SummaryChip(
                         modifier = Modifier.weight(1f),
                         count = riskyApps.size,
-                        label = "Risky",
+                        label = stringResource(R.string.security_risky),
                         color = RiskCritical
                     )
                 }
@@ -212,7 +214,7 @@ fun SecurityScreen(
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "$totalTrackers trackers found across all apps",
+                            stringResource(R.string.security_trackers_format, totalTrackers),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -235,7 +237,7 @@ fun SecurityScreen(
             if (sortedResults.isNotEmpty()) {
                 item {
                     Text(
-                        "All Scanned Apps",
+                        stringResource(R.string.security_all_scanned_apps),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -256,7 +258,7 @@ fun SecurityScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("View Scan History")
+                    Text(stringResource(R.string.security_view_scan_history))
                 }
             }
         }
@@ -364,7 +366,7 @@ private fun ScanButton(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        if (isScanning) "Scanning..." else if (scanComplete) "Rescan" else "Scan",
+                        if (isScanning) stringResource(R.string.security_scanning) else if (scanComplete) stringResource(R.string.security_rescan) else stringResource(R.string.security_scan),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
@@ -403,7 +405,7 @@ private fun DeviceScoreCard(score: Int) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Device Security Score",
+                stringResource(R.string.security_device_score),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -417,10 +419,10 @@ private fun DeviceScoreCard(score: Int) {
             )
             Text(
                 when {
-                    securityScore >= 80 -> "Your device is well protected"
-                    securityScore >= 60 -> "Your device is mostly secure"
-                    securityScore >= 40 -> "Some apps need attention"
-                    else -> "Security issues detected"
+                    securityScore >= 80 -> stringResource(R.string.security_well_protected)
+                    securityScore >= 60 -> stringResource(R.string.security_mostly_secure)
+                    securityScore >= 40 -> stringResource(R.string.security_some_attention)
+                    else -> stringResource(R.string.security_issues_detected)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -480,14 +482,14 @@ private fun DeviceAdminWarningCard(admins: List<DeviceAdminAppInfo>) {
             Spacer(Modifier.width(12.dp))
             Column {
                 Text(
-                    "Device Admin Warning",
+                    stringResource(R.string.security_device_admin_warning),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = RiskHigh
                 )
                 admins.forEach { admin ->
                     Text(
-                        "${admin.appName} has device admin privileges",
+                        stringResource(R.string.security_admin_privileges_format, admin.appName),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -573,7 +575,7 @@ private fun ScanResultCard(result: AppScanResult) {
                 // Threat reasons
                 if (result.threatAssessment.reasons.isNotEmpty()) {
                     Text(
-                        "Threat Analysis",
+                        stringResource(R.string.security_threat_analysis),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -592,7 +594,7 @@ private fun ScanResultCard(result: AppScanResult) {
                 // Trackers
                 if (result.detectedTrackers.isNotEmpty()) {
                     Text(
-                        "Trackers (${result.detectedTrackers.size})",
+                        stringResource(R.string.security_trackers_count_format, result.detectedTrackers.size),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -610,7 +612,7 @@ private fun ScanResultCard(result: AppScanResult) {
 
                 // Permission audit summary
                 Text(
-                    "Permissions",
+                    stringResource(R.string.security_permissions),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -625,7 +627,7 @@ private fun ScanResultCard(result: AppScanResult) {
                 // Install source
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Source: ${result.installSource.displayName}",
+                    stringResource(R.string.security_source_format, result.installSource.displayName),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

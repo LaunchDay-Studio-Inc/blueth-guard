@@ -256,4 +256,84 @@
 
     <!-- Widget -->
     <string name="widget_description">Shows your device security score at a glance</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">Blueth Guard</string>
+    <string name="home_subtitle">Device Health</string>
+    <string name="home_score_excellent">Excellent</string>
+    <string name="home_score_good">Good</string>
+    <string name="home_score_fair">Fair</string>
+    <string name="home_score_needs_attention">Needs Attention</string>
+    <string name="home_score_at_risk">At Risk</string>
+    <string name="home_run_first_scan">Run your first scan</string>
+    <string name="home_last_scan_format">Last scan: %1$s</string>
+    <string name="home_never_scanned">Never scanned</string>
+    <string name="home_start_scan">Start Security Scan</string>
+    <string name="home_quick_scan">Quick Scan</string>
+    <string name="home_battery">Battery</string>
+    <string name="home_privacy">Privacy</string>
+    <string name="home_security">Security</string>
+    <string name="home_storage">Storage</string>
+    <string name="home_error">Error</string>
+    <string name="home_unable_to_load">Unable to load</string>
+    <string name="home_not_scanned">Not scanned</string>
+    <string name="home_not_analyzed">Not analyzed</string>
+    <string name="home_all_clear">All clear</string>
+    <string name="home_threats_format">%1$d threats</string>
+    <string name="home_high_risk_apps_format">%1$d high-risk apps</string>
+    <string name="home_charging">Charging</string>
+    <string name="home_protection_active">Real-time Protection Active</string>
+    <string name="home_protection_disabled">Protection Disabled</string>
+    <string name="home_install_scanning_enabled">Install scanning enabled</string>
+    <string name="home_monitoring_active">Monitoring active</string>
+    <string name="home_tap_to_enable">Tap to enable protection</string>
+    <string name="home_enable">Enable</string>
+    <string name="home_alerts">Alerts</string>
+    <string name="home_high_risk_perms_format">%1$d apps with high-risk permissions</string>
+    <string name="home_scan_overdue">Scheduled scan overdue</string>
+    <string name="home_battery_temp_format">Battery temperature elevated: %1$.1f°C</string>
+
+    <!-- Security Screen -->
+    <string name="security_title">Security</string>
+    <string name="security_scanning_format">Scanning %1$s… %2$d/%3$d</string>
+    <string name="security_safe">Safe</string>
+    <string name="security_attention">Attention</string>
+    <string name="security_risky">Risky</string>
+    <string name="security_trackers_format">%1$d trackers found across all apps</string>
+    <string name="security_all_scanned_apps">All Scanned Apps</string>
+    <string name="security_view_scan_history">View Scan History</string>
+    <string name="security_scan">Scan</string>
+    <string name="security_rescan">Rescan</string>
+    <string name="security_scanning">Scanning…</string>
+    <string name="security_device_score">Device Security Score</string>
+    <string name="security_well_protected">Your device is well protected</string>
+    <string name="security_mostly_secure">Your device is mostly secure</string>
+    <string name="security_some_attention">Some apps need attention</string>
+    <string name="security_issues_detected">Security issues detected</string>
+    <string name="security_device_admin_warning">Device Admin Warning</string>
+    <string name="security_admin_privileges_format">%1$s has device admin privileges</string>
+    <string name="security_threat_analysis">Threat Analysis</string>
+    <string name="security_trackers_count_format">Trackers (%1$d)</string>
+    <string name="security_permissions">Permissions</string>
+    <string name="security_source_format">Source: %1$s</string>
+
+    <!-- Scan History Screen -->
+    <string name="scan_history_title">Scan History</string>
+    <string name="scan_history_clear">Clear History</string>
+    <string name="scan_history_empty">No scan history yet</string>
+    <string name="scan_history_empty_hint">Run your first scan to see results here</string>
+    <string name="scan_history_flagged_apps">Flagged Apps</string>
+    <string name="scan_history_all_passed">All apps passed scan</string>
+    <string name="scan_history_more_format">+ %1$d more</string>
+    <string name="scan_history_threats">Threats</string>
+    <string name="scan_history_trackers">Trackers</string>
+
+    <!-- Permission Changes -->
+    <string name="permission_changes_detected">Permission Changes Detected</string>
+    <string name="permission_changes_count_format">%1$d app(s) have changed permissions since last scan</string>
+
+    <!-- Battery Alerts -->
+    <string name="battery_temp_high">Battery Temperature High</string>
+    <string name="battery_health_degraded_alert">Battery Health Degraded</string>
+    <string name="battery_low">Low Battery</string>
 </resources>
