@@ -9,12 +9,12 @@ plugins {
 
 android {
     namespace = "com.blueth.guard"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.blueth.guard"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
 
@@ -64,36 +64,36 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Activity & Core
-    implementation("androidx.activity:activity-compose:1.10.1")
-    implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.core:core-ktx:1.18.0")
 
     // Lifecycle + ViewModel
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
 
     // Navigation Compose
-    implementation("androidx.navigation:navigation-compose:2.8.9")
+    implementation("androidx.navigation:navigation-compose:2.9.7")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.56.1")
     ksp("com.google.dagger:hilt-android-compiler:2.56.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
 
     // Room
-    implementation("androidx.room:room-runtime:2.7.0")
-    implementation("androidx.room:room-ktx:2.7.0")
-    ksp("androidx.room:room-compiler:2.7.0")
+    implementation("androidx.room:room-runtime:2.8.4")
+    implementation("androidx.room:room-ktx:2.8.4")
+    ksp("androidx.room:room-compiler:2.8.4")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
 
     // Serialization (for type-safe navigation)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
 
     // Coil (app icon loading)
     implementation("io.coil-kt:coil-compose:2.7.0")
 
     // Splash screen
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.core:core-splashscreen:1.2.0")
 }

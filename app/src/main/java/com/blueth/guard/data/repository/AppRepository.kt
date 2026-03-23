@@ -4,6 +4,7 @@ import android.app.usage.StorageStatsManager
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Process
 import android.os.storage.StorageManager
 import com.blueth.guard.data.model.AppInfo
@@ -56,7 +57,12 @@ class AppRepository @Inject constructor(
         val icon = try { pm.getApplicationIcon(applicationInfo) } catch (_: Exception) { null }
 
         val installSource = try {
-            pm.getInstallSourceInfo(packageInfo.packageName).installingPackageName ?: "Unknown"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                pm.getInstallSourceInfo(packageInfo.packageName).installingPackageName ?: "Unknown"
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getInstallerPackageName(packageInfo.packageName) ?: "Unknown"
+            }
         } catch (_: Exception) {
             "Unknown"
         }

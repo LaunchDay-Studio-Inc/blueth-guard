@@ -1,6 +1,7 @@
 package com.blueth.guard.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -12,6 +13,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,22 +28,26 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -54,28 +60,37 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.blueth.guard.data.model.AppInfo
-import com.blueth.guard.scanner.PermissionRiskScorer
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.blueth.guard.scanner.AppScanResult
+import com.blueth.guard.scanner.DeviceAdminAppInfo
+import com.blueth.guard.scanner.RiskLevel
 import com.blueth.guard.ui.theme.RiskCritical
 import com.blueth.guard.ui.theme.RiskHigh
 import com.blueth.guard.ui.theme.RiskLow
 import com.blueth.guard.ui.theme.RiskMedium
 import com.blueth.guard.ui.theme.RiskSafe
-import com.blueth.guard.ui.viewmodel.AppListViewModel
-import kotlinx.coroutines.delay
+import com.blueth.guard.ui.viewmodel.ScanState
+import com.blueth.guard.ui.viewmodel.SecurityViewModel
 
 @Composable
 fun SecurityScreen(
-    viewModel: AppListViewModel = hiltViewModel()
+    viewModel: SecurityViewModel = hiltViewModel()
 ) {
-    val apps by viewModel.apps.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    var isScanning by remember { mutableStateOf(false) }
-    var scanComplete by remember { mutableStateOf(false) }
-    var scanProgress by remember { mutableIntStateOf(0) }
+    val scanState by viewModel.scanState.collectAsState()
+    val scanProgress by viewModel.scanProgress.collectAsState()
+    val scanResults by viewModel.scanResults.collectAsState()
+    val overallScore by viewModel.overallDeviceScore.collectAsState()
+    val deviceAdmins by viewModel.deviceAdmins.collectAsState()
+
+    val isScanning = scanState == ScanState.SCANNING
+    val scanComplete = scanState == ScanState.COMPLETE
+
+    val totalApps = scanProgress?.total ?: 0
+    val currentProgress = scanProgress?.current ?: 0
+    val currentAppName = scanProgress?.currentApp ?: ""
 
     LazyColumn(
         modifier = Modifier
@@ -97,77 +112,133 @@ fun SecurityScreen(
             ScanButton(
                 isScanning = isScanning,
                 scanComplete = scanComplete,
-                scanProgress = scanProgress,
-                totalApps = apps.size,
-                onScanClick = {
-                    if (!isScanning) {
-                        isScanning = true
-                        scanComplete = false
-                        scanProgress = 0
-                    }
-                }
+                scanProgress = currentProgress,
+                totalApps = totalApps,
+                currentAppName = currentAppName,
+                onScanClick = { viewModel.startFullScan() }
             )
+        }
 
-            if (isScanning) {
-                LaunchedEffect(Unit) {
-                    for (i in 1..apps.size.coerceAtLeast(1)) {
-                        delay(50)
-                        scanProgress = i
-                    }
-                    delay(500)
-                    isScanning = false
-                    scanComplete = true
+        // Progress bar during scan
+        if (isScanning && totalApps > 0) {
+            item {
+                Column {
+                    LinearProgressIndicator(
+                        progress = { currentProgress.toFloat() / totalApps },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Scanning $currentAppName... $currentProgress/$totalApps",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }
 
-        // Scan results
-        if (scanComplete && !isLoading) {
-            val highRiskApps = apps.filter { it.riskScore > 60 }
-            val mediumRiskApps = apps.filter { it.riskScore in 41..60 }
-            val lowRiskApps = apps.filter { it.riskScore in 21..40 }
-            val safeApps = apps.filter { it.riskScore <= 20 }
+        // Results
+        if (scanComplete) {
+            val safeApps = scanResults.filter { it.threatAssessment.riskLevel == RiskLevel.SAFE }
+            val lowApps = scanResults.filter { it.threatAssessment.riskLevel == RiskLevel.LOW }
+            val mediumApps = scanResults.filter { it.threatAssessment.riskLevel == RiskLevel.MEDIUM }
+            val riskyApps = scanResults.filter {
+                it.threatAssessment.riskLevel == RiskLevel.HIGH || it.threatAssessment.riskLevel == RiskLevel.CRITICAL
+            }
+            val totalTrackers = scanResults.sumOf { it.detectedTrackers.size }
 
+            // Device score
             item {
                 AnimatedVisibility(
                     visible = true,
                     enter = fadeIn() + slideInVertically()
                 ) {
-                    RiskSummaryCard(
-                        total = apps.size,
-                        critical = highRiskApps.size,
-                        medium = mediumRiskApps.size,
-                        low = lowRiskApps.size,
-                        safe = safeApps.size
+                    DeviceScoreCard(overallScore)
+                }
+            }
+
+            // Summary cards
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    SummaryChip(
+                        modifier = Modifier.weight(1f),
+                        count = safeApps.size + lowApps.size,
+                        label = "Safe",
+                        color = RiskSafe
+                    )
+                    SummaryChip(
+                        modifier = Modifier.weight(1f),
+                        count = mediumApps.size,
+                        label = "Attention",
+                        color = RiskMedium
+                    )
+                    SummaryChip(
+                        modifier = Modifier.weight(1f),
+                        count = riskyApps.size,
+                        label = "Risky",
+                        color = RiskCritical
                     )
                 }
             }
 
-            if (highRiskApps.isNotEmpty()) {
-                item {
-                    Text(
-                        "High Risk Apps",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = RiskHigh,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                items(highRiskApps.take(10), key = { it.packageName }) { app ->
-                    FlaggedAppCard(app)
+            // Tracker count
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.TrackChanges,
+                            contentDescription = "Trackers",
+                            tint = RiskMedium,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "$totalTrackers trackers found across all apps",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
 
-            if (mediumRiskApps.isNotEmpty()) {
+            // Device admin warning
+            val nonSystemAdmins = deviceAdmins.filter { admin ->
+                !admin.description.contains("System")
+            }
+            if (nonSystemAdmins.isNotEmpty()) {
+                item {
+                    DeviceAdminWarningCard(nonSystemAdmins)
+                }
+            }
+
+            // All apps sorted by risk
+            val sortedResults = scanResults.sortedByDescending { it.threatAssessment.overallScore }
+
+            if (sortedResults.isNotEmpty()) {
                 item {
                     Text(
-                        "Medium Risk Apps",
+                        "All Scanned Apps",
                         style = MaterialTheme.typography.titleMedium,
-                        color = RiskMedium,
                         fontWeight = FontWeight.Bold
                     )
                 }
-                items(mediumRiskApps.take(10), key = { it.packageName }) { app ->
-                    FlaggedAppCard(app)
+                items(sortedResults, key = { it.appInfo.packageName }) { result ->
+                    ScanResultCard(result)
                 }
             }
         }
@@ -182,6 +253,7 @@ private fun ScanButton(
     scanComplete: Boolean,
     scanProgress: Int,
     totalApps: Int,
+    currentAppName: String,
     onScanClick: () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "scan_rotation")
@@ -215,7 +287,6 @@ private fun ScanButton(
             contentAlignment = Alignment.Center,
             modifier = Modifier.size(200.dp)
         ) {
-            // Outer ring animation
             if (isScanning) {
                 Canvas(
                     modifier = Modifier
@@ -234,9 +305,7 @@ private fun ScanButton(
                 }
             }
 
-            // Progress ring
             Canvas(modifier = Modifier.size(180.dp)) {
-                // Background ring
                 drawArc(
                     color = Color(0xFF1E2438),
                     startAngle = -90f,
@@ -244,7 +313,6 @@ private fun ScanButton(
                     useCenter = false,
                     style = Stroke(width = 8.dp.toPx())
                 )
-                // Progress
                 if (isScanning || scanComplete) {
                     val sweep = if (scanComplete) 360f else progressAnim.value * 360f
                     val progressColor = if (scanComplete) Color(0xFF4CAF50) else Color(0xFF2196F3)
@@ -258,7 +326,6 @@ private fun ScanButton(
                 }
             }
 
-            // Center button
             Button(
                 onClick = onScanClick,
                 modifier = Modifier
@@ -274,7 +341,7 @@ private fun ScanButton(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         Icons.Filled.Shield,
-                        contentDescription = "Scan",
+                        contentDescription = "Start security scan",
                         modifier = Modifier.size(32.dp)
                     )
                     Spacer(Modifier.height(4.dp))
@@ -285,132 +352,264 @@ private fun ScanButton(
                 }
             }
         }
-
-        if (isScanning) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Scanning $scanProgress / $totalApps apps...",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
     }
 }
 
 @Composable
-private fun RiskSummaryCard(
-    total: Int,
-    critical: Int,
-    medium: Int,
-    low: Int,
-    safe: Int
-) {
+private fun DeviceScoreCard(score: Int) {
+    val scoreColor = when {
+        score <= 20 -> RiskSafe
+        score <= 40 -> RiskLow
+        score <= 60 -> RiskMedium
+        score <= 80 -> RiskHigh
+        else -> RiskCritical
+    }
+    // Invert for display: lower threat score = higher device security
+    val securityScore = (100 - score).coerceIn(0, 100)
+    val displayColor = when {
+        securityScore >= 80 -> RiskSafe
+        securityScore >= 60 -> RiskLow
+        securityScore >= 40 -> RiskMedium
+        securityScore >= 20 -> RiskHigh
+        else -> RiskCritical
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(
-                "Scan Results",
+                "Device Security Score",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
-                "$total apps scanned",
+                "$securityScore",
+                style = MaterialTheme.typography.displayLarge,
+                fontWeight = FontWeight.Bold,
+                color = displayColor,
+                fontSize = 64.sp
+            )
+            Text(
+                when {
+                    securityScore >= 80 -> "Your device is well protected"
+                    securityScore >= 60 -> "Your device is mostly secure"
+                    securityScore >= 40 -> "Some apps need attention"
+                    else -> "Security issues detected"
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(Modifier.height(12.dp))
-            RiskRow("Critical / High", critical, RiskCritical)
-            RiskRow("Medium", medium, RiskMedium)
-            RiskRow("Low", low, RiskLow)
-            RiskRow("Safe", safe, RiskSafe)
         }
     }
 }
 
 @Composable
-private fun RiskRow(label: String, count: Int, color: Color) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+private fun SummaryChip(
+    modifier: Modifier = Modifier,
+    count: Int,
+    label: String,
+    color: Color
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.15f))
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .size(12.dp)
-                .clip(CircleShape)
-                .background(color)
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            count.toString(),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold
-        )
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                count.toString(),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = color
+            )
+        }
     }
 }
 
 @Composable
-private fun FlaggedAppCard(app: AppInfo) {
-    val riskColor = when {
-        app.riskScore > 80 -> RiskCritical
-        app.riskScore > 60 -> RiskHigh
-        app.riskScore > 40 -> RiskMedium
-        app.riskScore > 20 -> RiskLow
-        else -> RiskSafe
-    }
-
+private fun DeviceAdminWarningCard(admins: List<DeviceAdminAppInfo>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = RiskHigh.copy(alpha = 0.15f))
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                Icons.Filled.Warning,
-                contentDescription = null,
-                tint = riskColor,
+                Icons.Filled.AdminPanelSettings,
+                contentDescription = "Device admin warning",
+                tint = RiskHigh,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Column {
                 Text(
-                    app.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
+                    "Device Admin Warning",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = RiskHigh
                 )
-                Text(
-                    app.packageName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "${app.permissions.size} permissions",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                admins.forEach { admin ->
+                    Text(
+                        "${admin.appName} has device admin privileges",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScanResultCard(result: AppScanResult) {
+    var expanded by remember { mutableStateOf(false) }
+    val riskColor = when (result.threatAssessment.riskLevel) {
+        RiskLevel.CRITICAL -> RiskCritical
+        RiskLevel.HIGH -> RiskHigh
+        RiskLevel.MEDIUM -> RiskMedium
+        RiskLevel.LOW -> RiskLow
+        RiskLevel.SAFE -> RiskSafe
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .clickable { expanded = !expanded }
+                .padding(12.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Risk badge
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(riskColor.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        result.threatAssessment.overallScore.toString(),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = riskColor
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        result.appInfo.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Row {
+                        Text(
+                            result.threatAssessment.riskLevel.label,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = riskColor
+                        )
+                        if (result.detectedTrackers.isNotEmpty()) {
+                            Text(
+                                " · ${result.detectedTrackers.size} trackers",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                Icon(
+                    if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = if (expanded) "Collapse" else "Expand",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+            // Expanded details
+            if (expanded) {
+                Spacer(Modifier.height(12.dp))
+
+                // Threat reasons
+                if (result.threatAssessment.reasons.isNotEmpty()) {
+                    Text(
+                        "Threat Analysis",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    result.threatAssessment.reasons.forEach { reason ->
+                        Text(
+                            "• ${reason.description}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                // Trackers
+                if (result.detectedTrackers.isNotEmpty()) {
+                    Text(
+                        "Trackers (${result.detectedTrackers.size})",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    result.detectedTrackers.forEach { tracker ->
+                        Text(
+                            "• ${tracker.signature.name} (${tracker.signature.category.label})",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                // Permission audit summary
                 Text(
-                    app.riskScore.toString(),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = riskColor,
-                    fontWeight = FontWeight.Bold
+                    "Permissions",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    "risk",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = riskColor
+                    result.permissionAudit.plainEnglishSummary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Install source
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Source: ${result.installSource.displayName}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

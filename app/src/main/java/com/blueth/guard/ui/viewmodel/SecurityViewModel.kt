@@ -1,0 +1,84 @@
+package com.blueth.guard.ui.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.blueth.guard.scanner.AppScanResult
+import com.blueth.guard.scanner.DeviceAdminAppInfo
+import com.blueth.guard.scanner.DeviceAdminChecker
+import com.blueth.guard.scanner.RiskLevel
+import com.blueth.guard.scanner.ScanProgress
+import com.blueth.guard.scanner.SecurityScanner
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+enum class ScanState { IDLE, SCANNING, COMPLETE }
+
+@HiltViewModel
+class SecurityViewModel @Inject constructor(
+    private val securityScanner: SecurityScanner,
+    private val deviceAdminChecker: DeviceAdminChecker
+) : ViewModel() {
+
+    private val _scanState = MutableStateFlow(ScanState.IDLE)
+    val scanState: StateFlow<ScanState> = _scanState.asStateFlow()
+
+    private val _scanProgress = MutableStateFlow<ScanProgress?>(null)
+    val scanProgress: StateFlow<ScanProgress?> = _scanProgress.asStateFlow()
+
+    private val _scanResults = MutableStateFlow<List<AppScanResult>>(emptyList())
+    val scanResults: StateFlow<List<AppScanResult>> = _scanResults.asStateFlow()
+
+    private val _overallDeviceScore = MutableStateFlow(0)
+    val overallDeviceScore: StateFlow<Int> = _overallDeviceScore.asStateFlow()
+
+    private val _deviceAdmins = MutableStateFlow<List<DeviceAdminAppInfo>>(emptyList())
+    val deviceAdmins: StateFlow<List<DeviceAdminAppInfo>> = _deviceAdmins.asStateFlow()
+
+    fun startFullScan() {
+        if (_scanState.value == ScanState.SCANNING) return
+
+        viewModelScope.launch {
+            _scanState.value = ScanState.SCANNING
+            _scanResults.value = emptyList()
+
+            securityScanner.scanAll().collect { progress ->
+                _scanProgress.value = progress
+                _scanResults.value = progress.results
+            }
+
+            val results = securityScanner.getLastScanResults()
+            _scanResults.value = results
+            _overallDeviceScore.value = calculateDeviceScore(results)
+            _deviceAdmins.value = deviceAdminChecker.getDeviceAdmins()
+            _scanState.value = ScanState.COMPLETE
+        }
+    }
+
+    private fun calculateDeviceScore(results: List<AppScanResult>): Int {
+        if (results.isEmpty()) return 0
+        val weightedSum = results.sumOf { result ->
+            val weight = when (result.threatAssessment.riskLevel) {
+                RiskLevel.CRITICAL -> 3.0
+                RiskLevel.HIGH -> 2.0
+                RiskLevel.MEDIUM -> 1.5
+                RiskLevel.LOW -> 1.0
+                RiskLevel.SAFE -> 0.5
+            }
+            (result.threatAssessment.overallScore * weight).toInt()
+        }
+        val totalWeight = results.sumOf { result ->
+            when (result.threatAssessment.riskLevel) {
+                RiskLevel.CRITICAL -> 3.0
+                RiskLevel.HIGH -> 2.0
+                RiskLevel.MEDIUM -> 1.5
+                RiskLevel.LOW -> 1.0
+                RiskLevel.SAFE -> 0.5
+            }
+        }
+        return if (totalWeight > 0) (weightedSum / totalWeight).toInt() else 0
+    }
+}
