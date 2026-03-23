@@ -5,15 +5,15 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Battery4Bar
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PhonelinkLock
 import androidx.compose.material.icons.filled.Rocket
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Battery4Bar
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.PhonelinkLock
 import androidx.compose.material.icons.outlined.RocketLaunch
 import androidx.compose.material.icons.outlined.Security
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -33,12 +33,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.blueth.guard.ui.screens.BatteryScreen
+import com.blueth.guard.ui.screens.HomeScreen
 import com.blueth.guard.ui.screens.OptimizerScreen
 import com.blueth.guard.ui.screens.PrivacyScreen
 import com.blueth.guard.ui.screens.SecurityScreen
 import com.blueth.guard.ui.screens.SettingsScreen
 import kotlinx.serialization.Serializable
 
+@Serializable data object HomeRoute
 @Serializable data object SecurityRoute
 @Serializable data object OptimizerRoute
 @Serializable data object PrivacyRoute
@@ -53,11 +55,11 @@ data class TopLevelRoute(
 )
 
 val topLevelRoutes = listOf(
+    TopLevelRoute("Home", HomeRoute, Icons.Filled.Home, Icons.Outlined.Home),
     TopLevelRoute("Security", SecurityRoute, Icons.Filled.Security, Icons.Outlined.Security),
-    TopLevelRoute("Optimize", OptimizerRoute, Icons.Filled.Rocket, Icons.Outlined.RocketLaunch),
     TopLevelRoute("Privacy", PrivacyRoute, Icons.Filled.PhonelinkLock, Icons.Outlined.PhonelinkLock),
     TopLevelRoute("Battery", BatteryRoute, Icons.Filled.Battery4Bar, Icons.Outlined.Battery4Bar),
-    TopLevelRoute("Settings", SettingsRoute, Icons.Filled.Settings, Icons.Outlined.Settings)
+    TopLevelRoute("Optimize", OptimizerRoute, Icons.Filled.Rocket, Icons.Outlined.RocketLaunch)
 )
 
 @Composable
@@ -109,7 +111,7 @@ fun MainNavGraph() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = SecurityRoute,
+            startDestination = HomeRoute,
             modifier = Modifier.padding(innerPadding),
             enterTransition = {
                 slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(300))
@@ -124,6 +126,15 @@ fun MainNavGraph() {
                 slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(300))
             }
         ) {
+            composable<HomeRoute> {
+                HomeScreen(
+                    onNavigateToSecurity = { navController.navigate(SecurityRoute) },
+                    onNavigateToPrivacy = { navController.navigate(PrivacyRoute) },
+                    onNavigateToBattery = { navController.navigate(BatteryRoute) },
+                    onNavigateToOptimizer = { navController.navigate(OptimizerRoute) },
+                    onNavigateToSettings = { navController.navigate(SettingsRoute) }
+                )
+            }
             composable<SecurityRoute> { SecurityScreen() }
             composable<OptimizerRoute> { OptimizerScreen() }
             composable<PrivacyRoute> { PrivacyScreen() }
