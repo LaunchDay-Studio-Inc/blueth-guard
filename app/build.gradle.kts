@@ -15,8 +15,8 @@ android {
         applicationId = "com.blueth.guard"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.0-alpha2"
+        versionCode = 3
+        versionName = "1.0.0-alpha3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -106,6 +106,6 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.2.0")
 
     // Glance (App Widget)
-    implementation("androidx.glance:glance-appwidget:1.2.0")
-    implementation("androidx.glance:glance-material3:1.2.0")
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.glance:glance-material3:1.1.1")
 }
