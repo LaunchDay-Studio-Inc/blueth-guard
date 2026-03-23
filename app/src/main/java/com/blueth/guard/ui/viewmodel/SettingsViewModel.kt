@@ -8,6 +8,7 @@ import com.blueth.guard.data.prefs.ScanInterval
 import com.blueth.guard.data.prefs.ThemeMode
 import com.blueth.guard.data.prefs.UserPreferences
 import com.blueth.guard.protection.ProtectionService
+import com.blueth.guard.worker.ScanScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val scanScheduler: ScanScheduler
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> = userPreferences.themeMode
@@ -43,11 +45,23 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setScanScheduleEnabled(enabled: Boolean) {
-        viewModelScope.launch { userPreferences.setScanScheduleEnabled(enabled) }
+        viewModelScope.launch {
+            userPreferences.setScanScheduleEnabled(enabled)
+            if (enabled) {
+                scanScheduler.schedulePeriodicScan(scanInterval.value)
+            } else {
+                scanScheduler.cancelScheduledScan()
+            }
+        }
     }
 
     fun setScanInterval(interval: ScanInterval) {
-        viewModelScope.launch { userPreferences.setScanInterval(interval) }
+        viewModelScope.launch {
+            userPreferences.setScanInterval(interval)
+            if (scanScheduleEnabled.value) {
+                scanScheduler.schedulePeriodicScan(interval)
+            }
+        }
     }
 
     fun setRealTimeProtection(enabled: Boolean, context: Context) {
