@@ -21,11 +21,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -56,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.blueth.guard.R
 import com.blueth.guard.battery.AppDrainEstimate
+import com.blueth.guard.battery.BatteryAlertEngine
 import com.blueth.guard.battery.DrainCategory
 import com.blueth.guard.battery.DrainImpact
 import com.blueth.guard.battery.RunningServiceInfo
@@ -81,6 +87,8 @@ fun BatteryScreen(
     val drainEstimates by viewModel.drainEstimates.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val lastRefresh by viewModel.lastRefreshTimestamp.collectAsState()
+    val batteryAlerts by viewModel.batteryAlerts.collectAsState()
+    val batteryHistory by viewModel.batteryHistory.collectAsState()
 
     val tabs = BatteryTab.entries
     val tabTitles = listOf(
@@ -137,7 +145,7 @@ fun BatteryScreen(
             }
         } else {
             when (selectedTab) {
-                BatteryTab.OVERVIEW -> OverviewTab(batteryHealth, lastRefresh)
+                BatteryTab.OVERVIEW -> OverviewTab(batteryHealth, lastRefresh, batteryAlerts, batteryHistory)
                 BatteryTab.WAKELOCKS -> WakelocksTab(wakelocks)
                 BatteryTab.SERVICES -> ServicesTab(services)
                 BatteryTab.DRAIN -> DrainTab(drainEstimates)
@@ -151,7 +159,9 @@ fun BatteryScreen(
 @Composable
 private fun OverviewTab(
     health: com.blueth.guard.battery.BatteryHealth?,
-    lastRefreshTimestamp: Long
+    lastRefreshTimestamp: Long,
+    batteryAlerts: List<BatteryAlertEngine.BatteryAlert>,
+    batteryHistory: List<com.blueth.guard.data.local.BatterySnapshot>
 ) {
     if (health == null) return
 
@@ -174,6 +184,13 @@ private fun OverviewTab(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { Spacer(Modifier.height(8.dp)) }
+
+        // Battery Alerts
+        if (batteryAlerts.isNotEmpty()) {
+            item {
+                BatteryAlertsSection(alerts = batteryAlerts)
+            }
+        }
 
         // Battery level circle
         item {
@@ -767,5 +784,68 @@ private fun formatDuration(ms: Long): String {
         hours > 0 -> "${hours}h ${minutes}m"
         minutes > 0 -> "${minutes}m"
         else -> "<1m"
+    }
+}
+
+@Composable
+private fun BatteryAlertsSection(alerts: List<BatteryAlertEngine.BatteryAlert>) {
+    val context = LocalContext.current
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        alerts.forEach { alert ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = when (alert.severity) {
+                        BatteryAlertEngine.Severity.CRITICAL -> MaterialTheme.colorScheme.errorContainer
+                        BatteryAlertEngine.Severity.WARNING -> RiskMedium.copy(alpha = 0.15f)
+                        BatteryAlertEngine.Severity.INFO -> MaterialTheme.colorScheme.primaryContainer
+                    }
+                )
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            when (alert.severity) {
+                                BatteryAlertEngine.Severity.CRITICAL -> Icons.Filled.Warning
+                                BatteryAlertEngine.Severity.WARNING -> Icons.Filled.BatteryAlert
+                                BatteryAlertEngine.Severity.INFO -> Icons.Filled.Info
+                            },
+                            contentDescription = null,
+                            tint = when (alert.severity) {
+                                BatteryAlertEngine.Severity.CRITICAL -> RiskCritical
+                                BatteryAlertEngine.Severity.WARNING -> RiskMedium
+                                BatteryAlertEngine.Severity.INFO -> BluePrimary
+                            },
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            alert.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(alert.description, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        alert.suggestion,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    alert.actionLabel?.let { label ->
+                        Spacer(Modifier.height(8.dp))
+                        Button(
+                            onClick = { alert.actionIntent?.let { context.startActivity(it) } },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = BluePrimary)
+                        ) {
+                            Text(label)
+                        }
+                    }
+                }
+            }
+        }
     }
 }

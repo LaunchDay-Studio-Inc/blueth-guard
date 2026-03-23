@@ -3,6 +3,7 @@ package com.blueth.guard.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blueth.guard.battery.AppDrainEstimate
+import com.blueth.guard.battery.BatteryAlertEngine
 import com.blueth.guard.battery.BatteryHealth
 import com.blueth.guard.battery.BatteryHealthAnalyzer
 import com.blueth.guard.battery.DrainRanker
@@ -29,7 +30,8 @@ class BatteryViewModel @Inject constructor(
     private val serviceMonitor: ServiceMonitor,
     private val drainRanker: DrainRanker,
     private val batteryHealthAnalyzer: BatteryHealthAnalyzer,
-    private val batterySnapshotDao: BatterySnapshotDao
+    private val batterySnapshotDao: BatterySnapshotDao,
+    private val batteryAlertEngine: BatteryAlertEngine
 ) : ViewModel() {
 
     private val _selectedTab = MutableStateFlow(BatteryTab.OVERVIEW)
@@ -53,6 +55,12 @@ class BatteryViewModel @Inject constructor(
     private val _lastRefreshTimestamp = MutableStateFlow(0L)
     val lastRefreshTimestamp: StateFlow<Long> = _lastRefreshTimestamp.asStateFlow()
 
+    private val _batteryAlerts = MutableStateFlow<List<BatteryAlertEngine.BatteryAlert>>(emptyList())
+    val batteryAlerts: StateFlow<List<BatteryAlertEngine.BatteryAlert>> = _batteryAlerts.asStateFlow()
+
+    private val _batteryHistory = MutableStateFlow<List<BatterySnapshot>>(emptyList())
+    val batteryHistory: StateFlow<List<BatterySnapshot>> = _batteryHistory.asStateFlow()
+
     init {
         refresh()
         saveSnapshot()
@@ -71,7 +79,15 @@ class BatteryViewModel @Inject constructor(
                 _wakelocks.value = wakelocksDeferred.await()
                 _services.value = servicesDeferred.await()
                 _drainEstimates.value = drainDeferred.await()
+                _batteryAlerts.value = batteryAlertEngine.generateAlerts()
                 _lastRefreshTimestamp.value = System.currentTimeMillis()
+
+                // Load battery history (last 24 hours)
+                val now = System.currentTimeMillis()
+                _batteryHistory.value = batterySnapshotDao.getInRange(now - 86_400_000, now)
+
+                // Cleanup old snapshots (older than 7 days)
+                batterySnapshotDao.deleteOlderThan(now - 7 * 86_400_000)
             } finally {
                 _isLoading.value = false
             }
