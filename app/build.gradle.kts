@@ -94,6 +94,14 @@ dependencies {
     // Coil (app icon loading)
     implementation("io.coil-kt:coil-compose:2.7.0")
 
+    // DataStore Preferences
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
+
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.11.0")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    ksp("androidx.hilt:hilt-compiler:1.2.0")
+
     // Splash screen
     implementation("androidx.core:core-splashscreen:1.2.0")
 }
