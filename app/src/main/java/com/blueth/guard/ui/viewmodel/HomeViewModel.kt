@@ -8,6 +8,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blueth.guard.battery.BatteryHealthAnalyzer
 import com.blueth.guard.battery.DrainRanker
+import com.blueth.guard.data.local.InstallEventDao
+import com.blueth.guard.data.local.PermissionEventDao
+import com.blueth.guard.data.local.ScanHistoryDao
 import com.blueth.guard.data.prefs.UserPreferences
 import com.blueth.guard.data.repository.AppRepository
 import com.blueth.guard.optimizer.StorageAnalyzer
@@ -65,6 +68,13 @@ data class DashboardState(
     val storageError: Boolean = false
 )
 
+data class ActivityItem(
+    val icon: String,  // emoji or icon type key
+    val title: String,
+    val subtitle: String,
+    val timestamp: Long
+)
+
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val securityScanner: SecurityScanner,
@@ -75,18 +85,26 @@ class HomeViewModel @Inject constructor(
     private val appRepository: AppRepository,
     private val userPreferences: UserPreferences,
     private val widgetDataSync: WidgetDataSync,
-    private val application: Application
+    private val application: Application,
+    private val scanHistoryDao: ScanHistoryDao,
+    private val installEventDao: InstallEventDao,
+    private val permissionEventDao: PermissionEventDao
 ) : ViewModel() {
 
     private val _dashboardState = MutableStateFlow(DashboardState())
     val dashboardState: StateFlow<DashboardState> = _dashboardState.asStateFlow()
 
+    private val _recentActivities = MutableStateFlow<List<ActivityItem>>(emptyList())
+    val recentActivities: StateFlow<List<ActivityItem>> = _recentActivities.asStateFlow()
+
     init {
         loadDashboard()
+        loadRecentActivities()
     }
 
     fun refresh() {
         loadDashboard()
+        loadRecentActivities()
     }
 
     private fun loadDashboard() {
@@ -254,6 +272,56 @@ class HomeViewModel @Inject constructor(
             } catch (_: Exception) {
                 // Widget sync is non-critical
             }
+        }
+    }
+
+    private fun loadRecentActivities() {
+        viewModelScope.launch {
+            val activities = mutableListOf<ActivityItem>()
+
+            try {
+                val recentScans = scanHistoryDao.getRecent(5)
+                recentScans.forEach { scan ->
+                    activities.add(
+                        ActivityItem(
+                            icon = "scan",
+                            title = "Security Scan",
+                            subtitle = "${scan.totalAppsScanned} apps scanned, ${scan.threatsFound} threats",
+                            timestamp = scan.timestamp
+                        )
+                    )
+                }
+            } catch (_: Exception) {}
+
+            try {
+                installEventDao.getRecentEvents(10).first().forEach { event ->
+                    activities.add(
+                        ActivityItem(
+                            icon = "install",
+                            title = "${event.action.name.lowercase().replaceFirstChar { it.uppercase() }}: ${event.appName}",
+                            subtitle = event.packageName,
+                            timestamp = event.timestamp
+                        )
+                    )
+                }
+            } catch (_: Exception) {}
+
+            try {
+                val since = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L
+                permissionEventDao.getRecentEvents(since).first().take(10).forEach { event ->
+                    val action = if (event.isGranted) "granted" else "revoked"
+                    activities.add(
+                        ActivityItem(
+                            icon = "permission",
+                            title = "Permission $action",
+                            subtitle = "${event.appName}: ${event.permission.substringAfterLast('.')}",
+                            timestamp = event.timestamp
+                        )
+                    )
+                }
+            } catch (_: Exception) {}
+
+            _recentActivities.value = activities.sortedByDescending { it.timestamp }.take(15)
         }
     }
 }

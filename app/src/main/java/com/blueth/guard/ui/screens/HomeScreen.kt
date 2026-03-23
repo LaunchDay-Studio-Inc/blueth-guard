@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,11 +25,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Battery4Bar
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Rocket
@@ -60,6 +64,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -80,6 +85,7 @@ import com.blueth.guard.ui.theme.RiskCritical
 import com.blueth.guard.ui.theme.RiskHigh
 import com.blueth.guard.ui.theme.RiskMedium
 import com.blueth.guard.ui.theme.RiskSafe
+import com.blueth.guard.ui.viewmodel.ActivityItem
 import com.blueth.guard.ui.viewmodel.DashboardState
 import com.blueth.guard.ui.viewmodel.HomeViewModel
 
@@ -94,6 +100,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.dashboardState.collectAsState()
+    val recentActivities by viewModel.recentActivities.collectAsState()
 
     PullToRefreshBox(
         isRefreshing = state.isLoading,
@@ -160,6 +167,13 @@ fun HomeScreen(
                     onNavigateToSettings = onNavigateToSettings,
                     onNavigateToBattery = onNavigateToBattery
                 )
+            }
+
+            // Recent Activity Feed
+            if (recentActivities.isNotEmpty()) {
+                item {
+                    RecentActivitySection(activities = recentActivities)
+                }
             }
 
             // Bottom spacing
@@ -777,6 +791,92 @@ private fun AlertCard(alert: AlertItem) {
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+// ── RECENT ACTIVITY FEED ──────────────────────────────────────────────────────
+
+@Composable
+private fun RecentActivitySection(activities: List<ActivityItem>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Recent Activity",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        activities.forEach { activity ->
+            RecentActivityCard(activity)
+        }
+    }
+}
+
+@Composable
+private fun RecentActivityCard(activity: ActivityItem) {
+    val icon = when (activity.icon) {
+        "scan" -> Icons.Filled.Shield
+        "install" -> Icons.Filled.Download
+        "permission" -> Icons.Filled.Lock
+        else -> Icons.Filled.Info
+    }
+    val iconColor = when (activity.icon) {
+        "scan" -> BluePrimary
+        "install" -> RiskMedium
+        "permission" -> RiskHigh
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(iconColor.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    activity.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    activity.subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Text(
+                android.text.format.DateUtils.getRelativeTimeSpanString(
+                    activity.timestamp,
+                    System.currentTimeMillis(),
+                    android.text.format.DateUtils.MINUTE_IN_MILLIS
+                ).toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
