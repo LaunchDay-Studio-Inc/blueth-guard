@@ -1,3 +1,63 @@
 <resources>
     <string name="app_name">Blueth Guard</string>
+
+    <!-- Optimizer: General -->
+    <string name="optimizer_title">Optimize</string>
+    <string name="optimizer_ram">RAM Usage</string>
+    <string name="optimizer_storage">Storage</string>
+    <string name="optimizer_free_format">Free %1$s</string>
+    <string name="optimizer_boost">Boost</string>
+    <string name="optimizer_clean">Clean</string>
+    <string name="optimizer_stop">Stop</string>
+    <string name="optimizer_dismiss">Dismiss</string>
+    <string name="optimizer_open_settings">Open Settings</string>
+    <string name="optimizer_open_app_settings">Open app settings</string>
+    <string name="optimizer_disabled">Disabled</string>
+
+    <!-- Optimizer: Tabs -->
+    <string name="optimizer_tab_overview">Overview</string>
+    <string name="optimizer_tab_cache">Cache</string>
+    <string name="optimizer_tab_processes">Processes</string>
+    <string name="optimizer_tab_duplicates">Duplicates</string>
+    <string name="optimizer_tab_bloatware">Bloatware</string>
+
+    <!-- Optimizer: Overview -->
+    <string name="optimizer_storage_breakdown">Storage Breakdown</string>
+    <string name="optimizer_quick_stats">Quick Stats</string>
+    <string name="optimizer_total_apps">Total Apps</string>
+    <string name="optimizer_total_cache">Total Cache</string>
+    <string name="optimizer_ram_used">RAM Used</string>
+    <string name="optimizer_killable_processes">Killable Processes</string>
+    <string name="optimizer_killable_count">%1$s killable</string>
+    <string name="optimizer_one_tap_optimize">One-Tap Optimize</string>
+
+    <!-- Optimizer: Cache -->
+    <string name="optimizer_clean_all">Clean All</string>
+    <string name="optimizer_cache_disclaimer">Opens system settings — Android does not allow apps to clear other apps\' caches without root</string>
+    <string name="optimizer_no_large_caches">No apps with cache larger than 1 MB</string>
+
+    <!-- Optimizer: Processes -->
+    <string name="optimizer_smart_boost">Smart Boost</string>
+    <string name="optimizer_freed_memory">Freed %1$s</string>
+    <string name="optimizer_processes_killed">%1$s processes stopped</string>
+    <string name="optimizer_can_be_freed">Can be freed (%1$s)</string>
+    <string name="optimizer_essential">Essential (%1$s)</string>
+
+    <!-- Optimizer: Duplicates -->
+    <string name="optimizer_scan_for_duplicates">Scan for Duplicates</string>
+    <string name="optimizer_scan_for_duplicates_desc">Find duplicate files taking up wasted space on your device</string>
+    <string name="optimizer_scanning">Scanning…</string>
+    <string name="optimizer_found_groups">Found %1$s duplicate groups</string>
+    <string name="optimizer_wasted_space">Wasted Space</string>
+    <string name="optimizer_duplicate_groups">%1$s duplicate groups found</string>
+    <string name="optimizer_delete_selected">Delete Selected</string>
+
+    <!-- Optimizer: Bloatware -->
+    <string name="optimizer_device_detected">%1$s device</string>
+    <string name="optimizer_bloatware_found">%1$s bloatware apps found</string>
+    <string name="optimizer_filter_all">All</string>
+    <string name="optimizer_filter_carrier">Carrier</string>
+    <string name="optimizer_filter_manufacturer">Manufacturer</string>
+    <string name="optimizer_filter_preinstalled">Preinstalled</string>
+    <string name="optimizer_no_bloatware">No bloatware detected</string>
 </resources>
