@@ -225,7 +225,7 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_realtime_protection),
                         subtitle = stringResource(R.string.settings_realtime_protection_desc),
                         checked = realTimeProtection,
-                        onCheckedChange = { viewModel.setRealTimeProtection(it) }
+                        onCheckedChange = { viewModel.setRealTimeProtection(it, context) }
                     )
                 }
             }

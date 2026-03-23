@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.blueth.guard.data.prefs.ScanInterval
 import com.blueth.guard.data.prefs.ThemeMode
 import com.blueth.guard.data.prefs.UserPreferences
+import com.blueth.guard.protection.ProtectionService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -49,8 +50,15 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { userPreferences.setScanInterval(interval) }
     }
 
-    fun setRealTimeProtection(enabled: Boolean) {
-        viewModelScope.launch { userPreferences.setRealTimeProtection(enabled) }
+    fun setRealTimeProtection(enabled: Boolean, context: Context) {
+        viewModelScope.launch {
+            userPreferences.setRealTimeProtection(enabled)
+            if (enabled) {
+                ProtectionService.start(context)
+            } else {
+                ProtectionService.stop(context)
+            }
+        }
     }
 
     fun setInstallScanEnabled(enabled: Boolean) {
