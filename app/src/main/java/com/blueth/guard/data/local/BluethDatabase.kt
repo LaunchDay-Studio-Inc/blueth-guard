@@ -10,9 +10,10 @@ import androidx.room.TypeConverters
         PermissionSnapshot::class,
         NetworkUsageEntry::class,
         InstallEvent::class,
-        BatterySnapshot::class
+        BatterySnapshot::class,
+        ScanHistoryEntry::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -22,4 +23,5 @@ abstract class BluethDatabase : RoomDatabase() {
     abstract fun networkEventDao(): NetworkEventDao
     abstract fun installEventDao(): InstallEventDao
     abstract fun batterySnapshotDao(): BatterySnapshotDao
+    abstract fun scanHistoryDao(): ScanHistoryDao
 }

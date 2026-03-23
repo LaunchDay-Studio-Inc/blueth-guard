@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.Warning
@@ -43,6 +44,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -77,6 +79,7 @@ import com.blueth.guard.ui.viewmodel.SecurityViewModel
 
 @Composable
 fun SecurityScreen(
+    onNavigateToScanHistory: () -> Unit = {},
     viewModel: SecurityViewModel = hiltViewModel()
 ) {
     val scanState by viewModel.scanState.collectAsState()
@@ -239,6 +242,21 @@ fun SecurityScreen(
                 }
                 items(sortedResults, key = { it.appInfo.packageName }) { result ->
                     ScanResultCard(result)
+                }
+            }
+            // View Scan History button
+            item {
+                OutlinedButton(
+                    onClick = onNavigateToScanHistory,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Filled.History,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("View Scan History")
                 }
             }
         }

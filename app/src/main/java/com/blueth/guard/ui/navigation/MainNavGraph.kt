@@ -36,6 +36,7 @@ import com.blueth.guard.ui.screens.BatteryScreen
 import com.blueth.guard.ui.screens.HomeScreen
 import com.blueth.guard.ui.screens.OptimizerScreen
 import com.blueth.guard.ui.screens.PrivacyScreen
+import com.blueth.guard.ui.screens.ScanHistoryScreen
 import com.blueth.guard.ui.screens.SecurityScreen
 import com.blueth.guard.ui.screens.SettingsScreen
 import kotlinx.serialization.Serializable
@@ -46,6 +47,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object PrivacyRoute
 @Serializable data object BatteryRoute
 @Serializable data object SettingsRoute
+@Serializable data object ScanHistoryRoute
 
 data class TopLevelRoute(
     val label: String,
@@ -135,11 +137,18 @@ fun MainNavGraph() {
                     onNavigateToSettings = { navController.navigate(SettingsRoute) }
                 )
             }
-            composable<SecurityRoute> { SecurityScreen() }
+            composable<SecurityRoute> {
+                SecurityScreen(
+                    onNavigateToScanHistory = { navController.navigate(ScanHistoryRoute) }
+                )
+            }
             composable<OptimizerRoute> { OptimizerScreen() }
             composable<PrivacyRoute> { PrivacyScreen() }
             composable<BatteryRoute> { BatteryScreen() }
             composable<SettingsRoute> { SettingsScreen() }
+            composable<ScanHistoryRoute> {
+                ScanHistoryScreen(onNavigateBack = { navController.popBackStack() })
+            }
         }
     }
 }

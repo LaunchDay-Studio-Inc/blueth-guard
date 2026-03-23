@@ -8,6 +8,7 @@ import com.blueth.guard.data.local.InstallEventDao
 import com.blueth.guard.data.local.NetworkEventDao
 import com.blueth.guard.data.local.PermissionEventDao
 import com.blueth.guard.data.local.PermissionSnapshotDao
+import com.blueth.guard.data.local.ScanHistoryDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -49,4 +50,8 @@ object DatabaseModule {
     @Provides
     fun provideBatterySnapshotDao(db: BluethDatabase): BatterySnapshotDao =
         db.batterySnapshotDao()
+
+    @Provides
+    fun provideScanHistoryDao(db: BluethDatabase): ScanHistoryDao =
+        db.scanHistoryDao()
 }
