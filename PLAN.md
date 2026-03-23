@@ -85,187 +85,187 @@ Target: Replace 5 apps (antivirus + cleaner + privacy + battery + storage) with 
 ## Phase 1 — Foundation (Week 1-2)
 
 ### 1.1 Project Scaffold
-- [ ] Create Android project (Kotlin, Compose, Gradle KTS)
-- [ ] Set up Hilt DI
-- [ ] Set up Room database
-- [ ] Set up Navigation (bottom nav + nested graphs)
-- [ ] Set up CI (GitHub Actions — build + lint)
-- [ ] Material 3 theme with Blueth brand colors
-- [ ] App icon and splash screen
+- [x] Create Android project (Kotlin, Compose, Gradle KTS)
+- [x] Set up Hilt DI
+- [x] Set up Room database
+- [x] Set up Navigation (bottom nav + nested graphs)
+- [x] Set up CI (GitHub Actions — build + lint)
+- [x] Material 3 theme with Blueth brand colors
+- [x] App icon and splash screen
 
 ### 1.2 App List & Info
-- [ ] PackageManager queries to list all installed apps
-- [ ] Display: icon, name, package, install source, size, last updated
-- [ ] Sort/filter: by size, install date, source, permissions
-- [ ] Tap to expand: full permission list, components, signatures
+- [x] PackageManager queries to list all installed apps
+- [x] Display: icon, name, package, install source, size, last updated
+- [x] Sort/filter: by size, install date, source, permissions
+- [x] Tap to expand: full permission list, components, signatures
 
 ### 1.3 Permission Auditor
-- [ ] Define risk scoring algorithm:
+- [x] Define risk scoring algorithm:
   - INTERNET + READ_SMS = HIGH
   - ACCESSIBILITY + INTERNET = CRITICAL
   - CAMERA + RECORD_AUDIO + INTERNET = HIGH
   - DEVICE_ADMIN + INTERNET = CRITICAL
   - etc.
-- [ ] Risk score badge per app (Safe / Low / Medium / High / Critical)
-- [ ] Permission breakdown screen with explanations
-- [ ] "What can this app do?" plain-English summary
+- [x] Risk score badge per app (Safe / Low / Medium / High / Critical)
+- [x] Permission breakdown screen with explanations
+- [x] "What can this app do?" plain-English summary
 
 ### 1.4 Storage Analyzer
-- [ ] Scan internal storage by category (apps, media, cache, system, other)
-- [ ] Visual treemap or sunburst chart
-- [ ] Tap to drill into categories
-- [ ] Quick actions: clear cache, open app info
+- [x] Scan internal storage by category (apps, media, cache, system, other)
+- [x] Visual treemap or sunburst chart
+- [x] Tap to drill into categories
+- [x] Quick actions: clear cache, open app info
 
 ---
 
 ## Phase 2 — Security Engine (Week 3-4)
 
 ### 2.1 ML Malware Scanner
-- [ ] Port LibreAV's feature extraction (APK → feature vector)
+- [x] Port LibreAV's feature extraction (APK → feature vector)
   - Permissions used
   - API calls
   - Intents
   - Native libraries
   - Certificate info
-- [ ] Bundle TFLite model for on-device inference
-- [ ] Scan single APK → safe/suspicious/malware + confidence %
-- [ ] Full device scan (all installed apps)
-- [ ] Scan history with timestamps
-- [ ] Results: app name, risk level, reasons, recommended action
+- [x] Bundle TFLite model for on-device inference
+- [x] Scan single APK → safe/suspicious/malware + confidence %
+- [x] Full device scan (all installed apps)
+- [x] Scan history with timestamps
+- [x] Results: app name, risk level, reasons, recommended action
 
 ### 2.2 Tracker Detection
-- [ ] Bundle Exodus Privacy tracker database
-- [ ] Scan APK class names against tracker signatures
-- [ ] Display: tracker name, company, category, description
-- [ ] Summary: "This app contains 7 trackers from 4 companies"
-- [ ] Delta update mechanism (check for new tracker sigs weekly)
+- [x] Bundle Exodus Privacy tracker database
+- [x] Scan APK class names against tracker signatures
+- [x] Display: tracker name, company, category, description
+- [x] Summary: "This app contains 7 trackers from 4 companies"
+- [x] Delta update mechanism (check for new tracker sigs weekly)
 
 ### 2.3 Sideload Tracker
-- [ ] Query installerPackageName for each app
-- [ ] Flag: Play Store / F-Droid / APK sideload / Unknown / ADB
-- [ ] Alert for apps installed from suspicious sources
-- [ ] "Installed from Telegram" type warnings
+- [x] Query installerPackageName for each app
+- [x] Flag: Play Store / F-Droid / APK sideload / Unknown / ADB
+- [x] Alert for apps installed from suspicious sources
+- [x] "Installed from Telegram" type warnings
 
 ### 2.4 Device Admin Checker
-- [ ] List all device admin apps
-- [ ] Explain what device admin allows
-- [ ] One-tap revoke (opens system settings)
+- [x] List all device admin apps
+- [x] Explain what device admin allows
+- [x] One-tap revoke (opens system settings)
 
 ---
 
 ## Phase 3 — Optimizer (Week 5-6)
 
 ### 3.1 Smart Process Manager
-- [ ] List running processes with CPU and memory usage
-- [ ] Categorize: essential system / user app / background service / bloatware
-- [ ] Smart kill: only kills non-essential background processes
-- [ ] Do NOT kill: launcher, keyboard, active music, navigation, messaging
-- [ ] Kill history log
+- [x] List running processes with CPU and memory usage
+- [x] Categorize: essential system / user app / background service / bloatware
+- [x] Smart kill: only kills non-essential background processes
+- [x] Do NOT kill: launcher, keyboard, active music, navigation, messaging
+- [x] Kill history log
 
 ### 3.2 Cache Cleaner
-- [ ] Per-app cache size calculation
-- [ ] Sort by cache size (biggest first)
-- [ ] Individual app cache clear
-- [ ] One-tap clear all caches
-- [ ] Estimated space savings before clearing
-- [ ] Scheduled auto-clean option
+- [x] Per-app cache size calculation
+- [x] Sort by cache size (biggest first)
+- [x] Individual app cache clear
+- [x] One-tap clear all caches
+- [x] Estimated space savings before clearing
+- [x] Scheduled auto-clean option
 
 ### 3.3 Duplicate File Finder
-- [ ] Scan by: exact hash, similar images (perceptual hash), similar file names
-- [ ] Categories: photos, videos, downloads, documents
-- [ ] Side-by-side comparison view
-- [ ] Bulk select and delete
-- [ ] "Keep newest" / "Keep largest" quick actions
+- [x] Scan by: exact hash, similar images (perceptual hash), similar file names
+- [x] Categories: photos, videos, downloads, documents
+- [x] Side-by-side comparison view
+- [x] Bulk select and delete
+- [x] "Keep newest" / "Keep largest" quick actions
 
 ### 3.4 Bloatware Identifier
-- [ ] Database of known bloatware by manufacturer (Samsung, OnePlus, Xiaomi, etc.)
-- [ ] Safe-to-disable recommendations
-- [ ] One-tap disable (via ADB shell for rooted, instructions for non-root)
-- [ ] Crowdsourced bloatware database (users can report)
+- [x] Database of known bloatware by manufacturer (Samsung, OnePlus, Xiaomi, etc.)
+- [x] Safe-to-disable recommendations
+- [x] One-tap disable (via ADB shell for rooted, instructions for non-root)
+- [x] Crowdsourced bloatware database (users can report)
 
 ---
 
 ## Phase 4 — Privacy & Protection (Week 7-8)
 
 ### 4.1 Permission Heatmap
-- [ ] Matrix view: apps (rows) x permissions (columns)
-- [ ] Color-coded: green (safe) / yellow (moderate) / red (dangerous)
-- [ ] Tap cell for details
-- [ ] "Most dangerous apps" ranking
-- [ ] Permission timeline: what changed since last scan
+- [x] Matrix view: apps (rows) x permissions (columns)
+- [x] Color-coded: green (safe) / yellow (moderate) / red (dangerous)
+- [x] Tap cell for details
+- [x] "Most dangerous apps" ranking
+- [x] Permission timeline: what changed since last scan
 
 ### 4.2 Network Traffic Monitor
-- [ ] VPN-based packet capture (no root needed, like NetGuard)
-- [ ] Per-app data usage (upload / download)
-- [ ] Connection log: IP, hostname, port, timestamp
-- [ ] Flag connections to known ad/tracker domains
-- [ ] Optional: block connections (firewall mode)
+- [x] VPN-based packet capture (no root needed, like NetGuard)
+- [x] Per-app data usage (upload / download)
+- [x] Connection log: IP, hostname, port, timestamp
+- [x] Flag connections to known ad/tracker domains
+- [x] Optional: block connections (firewall mode)
 
 ### 4.3 Real-time Install Guard
-- [ ] BroadcastReceiver for PACKAGE_ADDED
-- [ ] Auto-scan new installs
-- [ ] Notification with scan result
-- [ ] "Block install" recommendation for flagged apps
+- [x] BroadcastReceiver for PACKAGE_ADDED
+- [x] Auto-scan new installs
+- [x] Notification with scan result
+- [x] "Block install" recommendation for flagged apps
 
 ### 4.4 Clipboard Monitor
-- [ ] Detect apps reading clipboard (Android 12+ native, polyfill for older)
-- [ ] Log clipboard access with app name and timestamp
-- [ ] Alert for suspicious clipboard reads
+- [x] Detect apps reading clipboard (Android 12+ native, polyfill for older)
+- [x] Log clipboard access with app name and timestamp
+- [x] Alert for suspicious clipboard reads
 
 ---
 
 ## Phase 5 — Battery Guardian (Week 7-8, parallel with Phase 4)
 
 ### 5.1 Wakelock Detector
-- [ ] List apps holding wakelocks
-- [ ] Duration and frequency tracking
-- [ ] "Top battery drainers" ranking
-- [ ] Historical trends (last 24h, 7d, 30d)
+- [x] List apps holding wakelocks
+- [x] Duration and frequency tracking
+- [x] "Top battery drainers" ranking
+- [x] Historical trends (last 24h, 7d, 30d)
 
 ### 5.2 Background Service Monitor
-- [ ] List persistent background services
-- [ ] Categorize: essential / optional / wasteful
-- [ ] Estimated battery impact per service
-- [ ] Recommendations to disable
+- [x] List persistent background services
+- [x] Categorize: essential / optional / wasteful
+- [x] Estimated battery impact per service
+- [x] Recommendations to disable
 
 ### 5.3 Battery Health Dashboard
-- [ ] Current battery stats (health, temperature, voltage, technology)
-- [ ] Charge cycle estimation
-- [ ] Charging speed monitor
-- [ ] Battery drain graph over time
+- [x] Current battery stats (health, temperature, voltage, technology)
+- [x] Charge cycle estimation
+- [x] Charging speed monitor
+- [x] Battery drain graph over time
 
 ---
 
 ## Phase 6 — Polish & Release (Week 9-10)
 
 ### 6.1 UI Polish
-- [ ] Animations and transitions
-- [ ] Onboarding flow (3 screens explaining features)
-- [ ] Widget: quick scan + battery + storage at a glance
-- [ ] Notification channels (scan results, alerts, recommendations)
-- [ ] Localization (English first, Arabic, Spanish, Portuguese, Hindi next)
+- [x] Animations and transitions
+- [x] Onboarding flow (3 screens explaining features)
+- [x] Widget: quick scan + battery + storage at a glance
+- [x] Notification channels (scan results, alerts, recommendations)
+- [x] Localization (English first, Arabic, Spanish, Portuguese, Hindi next)
 
 ### 6.2 Settings
-- [ ] Scan schedule (daily, weekly, on-install-only)
-- [ ] Notification preferences
-- [ ] Theme (dark, light, system)
-- [ ] Database update frequency
-- [ ] Export scan reports (PDF/JSON)
-- [ ] About + open source licenses
+- [x] Scan schedule (daily, weekly, on-install-only)
+- [x] Notification preferences
+- [x] Theme (dark, light, system)
+- [x] Database update frequency
+- [x] Export scan reports (PDF/JSON)
+- [x] About + open source licenses
 
 ### 6.3 Distribution
-- [ ] F-Droid metadata (fastlane structure)
-- [ ] GitHub Releases (signed APK)
-- [ ] Play Store listing (title, description, screenshots, feature graphic)
-- [ ] blueth.online product page
-- [ ] APK direct download from website
+- [x] F-Droid metadata (fastlane structure)
+- [x] GitHub Releases (signed APK)
+- [x] Play Store listing (title, description, screenshots, feature graphic)
+- [x] blueth.online product page
+- [x] APK direct download from website
 
 ### 6.4 Documentation
-- [ ] User guide
-- [ ] Privacy policy (we collect nothing)
-- [ ] FAQ
-- [ ] Contributing guide
-- [ ] Architecture docs for contributors
+- [x] User guide
+- [x] Privacy policy (we collect nothing)
+- [x] FAQ
+- [x] Contributing guide
+- [x] Architecture docs for contributors
 
 ---
 

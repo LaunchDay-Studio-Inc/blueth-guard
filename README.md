@@ -89,7 +89,7 @@ Every "cleaner" and "antivirus" app on the Play Store is:
 
 ## Screenshots
 
-> *Coming soon — app is in active development*
+> *Screenshots coming in beta*
 
 ## Development Status
 
@@ -99,8 +99,8 @@ Every "cleaner" and "antivirus" app on the Play Store is:
 | **2 — Security** | Scanner, tracker detection, sideload detector, device admin | ✅ Complete |
 | **3 — Optimizer** | Cache, processes, duplicates, bloatware, storage | ✅ Complete |
 | **4 — Privacy** | Room DB, permission monitor, network monitor, clipboard, install guard, privacy scorer | ✅ Complete |
-| **5 — Battery** | Wakelock deep scan, service monitor, drain ranking, battery health | ✅ Done |
-| **6 — Polish** | UI animations, onboarding, F-Droid, Play Store | ⬜ Planned |
+| **5 — Battery** | Wakelock deep scan, service monitor, drain ranking, battery health | ✅ Complete |
+| **6 — Polish** | Onboarding, DataStore settings, notifications, real-time protection, WorkManager, export, F-Droid | ✅ Complete |
 
 ## Tech Stack
 
@@ -113,7 +113,7 @@ Every "cleaner" and "antivirus" app on the Play Store is:
 | AV Engine | On-device ML (TFLite) + signature DB |
 | Tracker DB | Exodus Privacy list (offline) |
 | Min SDK | Android 8.0+ (API 26) |
-| Target SDK | Android 15 (API 35) |
+| Target SDK | Android 16 (API 36) |
 
 ## Building from Source
 
@@ -147,16 +147,21 @@ blueth-guard/
 │   │   ├── WakelockDetector.kt, ServiceMonitor.kt
 │   │   ├── DrainRanker.kt
 │   │   └── BatteryHealthAnalyzer.kt
-│   ├── protection/       # Real-time protection (3 files)
-│   │   ├── InstallGuard.kt, DebugDetector.kt
-│   │   └── AccessibilityWatcher.kt
-│   ├── data/             # Room DB + models (12 files)
+│   ├── protection/       # Real-time protection (4 files)
+│   │   ├── ProtectionService.kt, DebugDetector.kt
+│   │   ├── AccessibilityWatcher.kt
+│   │   └── InstallGuard.kt
+│   ├── data/             # Room DB + models + prefs (14 files)
 │   │   ├── local/        # Database, DAOs, entities
 │   │   ├── model/        # Data models
+│   │   ├── prefs/        # DataStore preferences
+│   │   ├── export/       # Report exporter
 │   │   └── repository/   # App data repository
-│   ├── ui/               # Compose UI (14 files)
-│   │   ├── screens/      # 5 main screens
-│   │   ├── viewmodel/    # 5 ViewModels
+│   ├── notification/     # Notification helper
+│   ├── worker/           # WorkManager (scheduled scans)
+│   ├── ui/               # Compose UI (16 files)
+│   │   ├── screens/      # 6 screens (+ onboarding)
+│   │   ├── viewmodel/    # 7 ViewModels
 │   │   ├── navigation/   # Bottom nav
 │   │   └── theme/        # Colors, typography
 │   └── di/               # Hilt modules
@@ -176,6 +181,22 @@ blueth-guard/
 ## Contributing
 
 Contributions welcome! Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+
+## Permissions
+
+| Permission | Why |
+|---|---|
+| `QUERY_ALL_PACKAGES` | List all installed apps for security scanning |
+| `INTERNET` | Optional malware signature database updates |
+| `ACCESS_NETWORK_STATE` | Check connectivity before database updates |
+| `REQUEST_DELETE_PACKAGES` | Let users uninstall detected bloatware |
+| `PACKAGE_USAGE_STATS` | Monitor app usage for battery and network analysis |
+| `FOREGROUND_SERVICE` | Real-time protection background service |
+| `FOREGROUND_SERVICE_SPECIAL_USE` | Security monitoring foreground service type |
+| `KILL_BACKGROUND_PROCESSES` | Smart process optimizer |
+| `POST_NOTIFICATIONS` | Security alerts and scan result notifications |
+| `READ_EXTERNAL_STORAGE` | Storage analysis on Android 12 and below |
+| `MANAGE_EXTERNAL_STORAGE` | Deep storage analysis for duplicate finder |
 
 ## License
 
