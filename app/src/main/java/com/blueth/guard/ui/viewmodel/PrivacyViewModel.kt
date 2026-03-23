@@ -16,6 +16,7 @@ import com.blueth.guard.privacy.ClipboardStatus
 import com.blueth.guard.privacy.DevicePrivacyScore
 import com.blueth.guard.privacy.InstallGuard
 import com.blueth.guard.privacy.NetworkMonitor
+import com.blueth.guard.privacy.PermissionDiffCalculator
 import com.blueth.guard.privacy.PermissionMonitor
 import com.blueth.guard.privacy.PrivacyRecommendation
 import com.blueth.guard.privacy.PrivacyScorer
@@ -38,7 +39,8 @@ class PrivacyViewModel @Inject constructor(
     private val clipboardGuard: ClipboardGuard,
     private val installGuard: InstallGuard,
     private val privacyScorer: PrivacyScorer,
-    private val appRepository: AppRepository
+    private val appRepository: AppRepository,
+    private val permissionDiffCalculator: PermissionDiffCalculator
 ) : ViewModel() {
 
     private val _privacyTab = MutableStateFlow(PrivacyTab.OVERVIEW)
@@ -85,6 +87,9 @@ class PrivacyViewModel @Inject constructor(
 
     private val _networkTimeRange = MutableStateFlow(24)
     val networkTimeRange: StateFlow<Int> = _networkTimeRange.asStateFlow()
+
+    private val _permissionDiffs = MutableStateFlow<List<PermissionDiffCalculator.PermissionDiff>>(emptyList())
+    val permissionDiffs: StateFlow<List<PermissionDiffCalculator.PermissionDiff>> = _permissionDiffs.asStateFlow()
 
     init {
         loadAll()
@@ -146,6 +151,11 @@ class PrivacyViewModel @Inject constructor(
                 launch {
                     _clipboardStatus.value = clipboardGuard.getClipboardStatus()
                     _clipboardEvents.value = clipboardGuard.getRecentClipboardEvents()
+                }
+
+                // Load permission diffs
+                launch(Dispatchers.IO) {
+                    _permissionDiffs.value = permissionDiffCalculator.calculateDiffs()
                 }
             } finally {
                 _isLoading.value = false

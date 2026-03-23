@@ -91,6 +91,7 @@ import com.blueth.guard.privacy.ClipboardStatus
 import com.blueth.guard.privacy.DevicePrivacyScore
 import com.blueth.guard.privacy.InstallAction
 import com.blueth.guard.privacy.NetworkMonitor
+import com.blueth.guard.privacy.PermissionDiffCalculator
 import com.blueth.guard.privacy.PrivacyRecommendation
 import com.blueth.guard.privacy.RecommendationSeverity
 import com.blueth.guard.privacy.SuspiciousNetworkApp
@@ -230,6 +231,7 @@ private fun OverviewTab(viewModel: PrivacyViewModel) {
     val deviceScore by viewModel.devicePrivacyScore.collectAsState()
     val recommendations by viewModel.recommendations.collectAsState()
     val appScores by viewModel.appPrivacyScores.collectAsState()
+    val permissionDiffs by viewModel.permissionDiffs.collectAsState()
     val context = LocalContext.current
 
     LazyColumn(
@@ -249,6 +251,13 @@ private fun OverviewTab(viewModel: PrivacyViewModel) {
         item {
             deviceScore?.stats?.let { stats ->
                 QuickStatsGrid(stats)
+            }
+        }
+
+        // Permission Changes
+        if (permissionDiffs.isNotEmpty()) {
+            item {
+                PermissionChangesCard(diffs = permissionDiffs)
             }
         }
 
@@ -1430,4 +1439,71 @@ private fun LegendItem(label: String, color: Color) {
 private fun formatTimestamp(timestamp: Long): String {
     val sdf = SimpleDateFormat("MMM d, HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
+}
+
+@Composable
+private fun PermissionChangesCard(diffs: List<PermissionDiffCalculator.PermissionDiff>) {
+    if (diffs.isEmpty()) return
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Warning, "Changes", tint = RiskMedium)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Permission Changes Detected",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "${diffs.size} app(s) have changed permissions since last scan",
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            Spacer(Modifier.height(12.dp))
+            diffs.take(5).forEach { diff ->
+                PermissionDiffItem(diff)
+                Spacer(Modifier.height(8.dp))
+            }
+            if (diffs.size > 5) {
+                Text(
+                    "+ ${diffs.size - 5} more",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionDiffItem(diff: PermissionDiffCalculator.PermissionDiff) {
+    Column {
+        Text(
+            diff.appName,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
+        diff.addedPermissions.forEach { perm ->
+            Text(
+                "  + ${perm.substringAfterLast(".")}",
+                color = RiskHigh,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        diff.removedPermissions.forEach { perm ->
+            Text(
+                "  - ${perm.substringAfterLast(".")}",
+                color = RiskSafe,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
 }
