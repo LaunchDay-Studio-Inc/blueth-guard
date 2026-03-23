@@ -1,0 +1,50 @@
+Every "cleaner" and "antivirus" app on Android is the same story: loaded with ads, packed with trackers, demanding sketchy permissions, and doing absolutely nothing useful. They run fake scans, show fake threats, and drain more battery than they save.
+
+Blueth Guard is different. It's a single, open-source app that replaces five categories of tools — and actually does what it promises.
+
+🔍 SECURITY SCANNER
+• ML-based on-device malware detection — no cloud, no data leaves your phone
+• APK signature verification against known malware databases
+• Permission auditor that flags dangerous permission combinations
+• Tracker detection using the Exodus Privacy database (200+ known trackers)
+• Sideload tracker — see which apps came from outside the Play Store
+• Device admin checker with one-tap revoke
+
+🧹 SMART OPTIMIZER
+• Intelligent process manager — kills only actual resource hogs, not everything blindly
+• Per-app cache cleaner with size breakdown
+• Duplicate file finder using MD5 hashing
+• Bloatware identifier with 100+ entries across Samsung, OnePlus, Xiaomi, Huawei, Google, and major carriers
+• Storage analyzer with visual breakdown
+
+🔒 PRIVACY DASHBOARD
+• Privacy score based on permissions, trackers, network activity, and install source
+• Permission heatmap — visual matrix of which apps have which permissions
+• Network monitor — per-app data usage tracking with suspicious activity detection
+• Clipboard guard — detects apps reading your clipboard silently
+• Install guard — automatically scans new app installations
+
+⚡ BATTERY GUARDIAN
+• Wakelock detector — find which apps keep your phone awake
+• Background service monitor — identify persistent services draining battery
+• Battery drain ranking with estimated mAh impact
+• Battery health dashboard with temperature and voltage monitoring
+
+🛡️ REAL-TIME PROTECTION
+• Foreground service monitors for new app installs
+• USB debugging detection alerts
+• Accessibility service monitoring for suspicious third-party services
+• Scheduled automatic scans (daily, weekly, or monthly)
+
+WHY BLUETH GUARD?
+✅ 100% offline — all scanning happens on your device
+✅ No ads, no trackers, no telemetry
+✅ Open source — verify the code yourself on GitHub
+✅ No root required for any feature
+✅ Dark and light theme support
+✅ Scan report export as JSON
+✅ Built with modern Android tech: Kotlin, Jetpack Compose, Material 3
+
+Blueth Guard is built for people who care about their privacy and want a tool that respects it. No account required. No sign-up. No data collection. Just install and scan.
+
+Built by LaunchDay Studio — security should be free, and privacy shouldn't cost extra.

@@ -1,0 +1,13 @@
+Initial alpha release — v1.0.0
+
+Features:
+- Security scanner with ML-based malware detection
+- Permission auditor with risk scoring
+- Tracker detection (Exodus Privacy database)
+- Smart optimizer (process manager, cache cleaner, duplicate finder)
+- Privacy dashboard (permission heatmap, network monitor, clipboard guard)
+- Battery guardian (wakelock detector, drain ranker, health analyzer)
+- Real-time protection (install guard, debug detector, accessibility watcher)
+- Scheduled security scans
+- Dark and light theme
+- Scan report export
