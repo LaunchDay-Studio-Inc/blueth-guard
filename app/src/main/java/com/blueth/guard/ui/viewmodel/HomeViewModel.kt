@@ -13,6 +13,7 @@ import com.blueth.guard.data.repository.AppRepository
 import com.blueth.guard.optimizer.StorageAnalyzer
 import com.blueth.guard.privacy.PrivacyScorer
 import com.blueth.guard.scanner.SecurityScanner
+import com.blueth.guard.widget.WidgetDataSync
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -73,6 +74,7 @@ class HomeViewModel @Inject constructor(
     private val storageAnalyzer: StorageAnalyzer,
     private val appRepository: AppRepository,
     private val userPreferences: UserPreferences,
+    private val widgetDataSync: WidgetDataSync,
     private val application: Application
 ) : ViewModel() {
 
@@ -240,6 +242,18 @@ class HomeViewModel @Inject constructor(
                 batteryError = batteryError,
                 storageError = storageError
             )
+
+            // Sync widget data
+            try {
+                widgetDataSync.updateWidgetData(
+                    overallScore = overallScore,
+                    lastScanTime = lastScanTime ?: 0L,
+                    riskyApps = riskyAppsCount,
+                    protectionEnabled = protectionEnabled
+                )
+            } catch (_: Exception) {
+                // Widget sync is non-critical
+            }
         }
     }
 }
