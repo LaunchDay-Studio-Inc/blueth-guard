@@ -51,6 +51,25 @@ private val LightColorScheme = lightColorScheme(
     onError = LightSurface
 )
 
+private val AmoledColorScheme = darkColorScheme(
+    primary = BluePrimary,
+    onPrimary = TextPrimary,
+    primaryContainer = BluePrimaryDark,
+    onPrimaryContainer = TextPrimary,
+    secondary = CyanSecondary,
+    onSecondary = TextPrimary,
+    secondaryContainer = CyanSecondaryDark,
+    onSecondaryContainer = TextPrimary,
+    background = AmoledBackground,
+    onBackground = TextPrimary,
+    surface = AmoledSurface,
+    onSurface = TextPrimary,
+    surfaceVariant = AmoledSurfaceVariant,
+    onSurfaceVariant = TextSecondary,
+    error = RiskCritical,
+    onError = TextPrimary
+)
+
 val BluethShapes = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(16.dp),
@@ -61,15 +80,20 @@ val BluethShapes = Shapes(
 @Composable
 fun BluethGuardTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    amoledTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = when {
+        amoledTheme -> AmoledColorScheme
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme && !amoledTheme
         }
     }
 

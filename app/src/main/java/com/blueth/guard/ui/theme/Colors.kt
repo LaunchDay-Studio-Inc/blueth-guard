@@ -23,6 +23,11 @@ val LightBackground = Color(0xFFF8F9FC)
 val LightSurface = Color(0xFFFFFFFF)
 val LightSurfaceVariant = Color(0xFFE8EAF0)
 
+// AMOLED theme surfaces
+val AmoledBackground = Color(0xFF000000)
+val AmoledSurface = Color(0xFF0A0A0A)
+val AmoledSurfaceVariant = Color(0xFF1A1A1A)
+
 // Risk colors
 val RiskSafe = Color(0xFF4CAF50)
 val RiskLow = Color(0xFF8BC34A)

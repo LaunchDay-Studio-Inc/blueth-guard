@@ -117,6 +117,7 @@ fun SettingsScreen(
                             val label = when (mode) {
                                 ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
                                 ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                                ThemeMode.AMOLED -> stringResource(R.string.settings_theme_amoled)
                                 ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
                             }
                             val selected = themeMode == mode

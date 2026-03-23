@@ -14,7 +14,7 @@ import javax.inject.Singleton
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
-enum class ThemeMode { DARK, LIGHT, SYSTEM }
+enum class ThemeMode { DARK, LIGHT, AMOLED, SYSTEM }
 enum class ScanInterval { DAILY, WEEKLY, MONTHLY, MANUAL }
 
 @Singleton

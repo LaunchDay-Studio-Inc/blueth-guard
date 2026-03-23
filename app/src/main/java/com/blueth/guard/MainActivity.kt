@@ -36,11 +36,12 @@ class MainActivity : ComponentActivity() {
 
             val darkTheme = when (themeMode) {
                 ThemeMode.DARK -> true
+                ThemeMode.AMOLED -> true
                 ThemeMode.LIGHT -> false
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
 
-            BluethGuardTheme(darkTheme = darkTheme) {
+            BluethGuardTheme(darkTheme = darkTheme, amoledTheme = themeMode == ThemeMode.AMOLED) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

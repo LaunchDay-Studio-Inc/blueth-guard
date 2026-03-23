@@ -208,6 +208,7 @@
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_amoled">AMOLED</string>
     <string name="settings_theme_system">System</string>
     <string name="settings_scheduled_scan">Scheduled Scan</string>
     <string name="settings_scheduled_scan_desc">Automatically scan apps on a schedule</string>
