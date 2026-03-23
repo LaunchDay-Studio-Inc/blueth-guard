@@ -1,0 +1,781 @@
+package com.blueth.guard.ui.screens
+
+import android.text.format.DateUtils
+import android.text.format.Formatter
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Battery4Bar
+import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Rocket
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.blueth.guard.ui.theme.BluePrimary
+import com.blueth.guard.ui.theme.RiskCritical
+import com.blueth.guard.ui.theme.RiskHigh
+import com.blueth.guard.ui.theme.RiskMedium
+import com.blueth.guard.ui.theme.RiskSafe
+import com.blueth.guard.ui.viewmodel.DashboardState
+import com.blueth.guard.ui.viewmodel.HomeViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeScreen(
+    onNavigateToSecurity: () -> Unit = {},
+    onNavigateToPrivacy: () -> Unit = {},
+    onNavigateToBattery: () -> Unit = {},
+    onNavigateToOptimizer: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
+    viewModel: HomeViewModel = hiltViewModel()
+) {
+    val state by viewModel.dashboardState.collectAsState()
+
+    PullToRefreshBox(
+        isRefreshing = state.isLoading,
+        onRefresh = { viewModel.refresh() },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .animateContentSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header
+            item {
+                Spacer(Modifier.height(8.dp))
+                HeaderSection(onNavigateToSettings = onNavigateToSettings)
+            }
+
+            // Score Ring
+            item {
+                ScoreRingSection(state = state)
+            }
+
+            // Quick Actions
+            item {
+                if (state.isLoading) {
+                    // Show nothing while loading
+                } else if (state.lastScanTime == null && !state.securityError) {
+                    FirstScanButton(onNavigateToSecurity = onNavigateToSecurity)
+                } else {
+                    QuickActionsRow(
+                        onNavigateToSecurity = onNavigateToSecurity,
+                        onNavigateToBattery = onNavigateToBattery,
+                        onNavigateToPrivacy = onNavigateToPrivacy
+                    )
+                }
+            }
+
+            // Module Status Cards
+            item {
+                ModuleCardsGrid(
+                    state = state,
+                    onNavigateToSecurity = onNavigateToSecurity,
+                    onNavigateToPrivacy = onNavigateToPrivacy,
+                    onNavigateToBattery = onNavigateToBattery,
+                    onNavigateToOptimizer = onNavigateToOptimizer
+                )
+            }
+
+            // Protection Status Banner
+            item {
+                ProtectionBanner(
+                    state = state,
+                    onNavigateToSettings = onNavigateToSettings
+                )
+            }
+
+            // Alerts Section
+            item {
+                AlertsSection(
+                    state = state,
+                    onNavigateToPrivacy = onNavigateToPrivacy,
+                    onNavigateToSettings = onNavigateToSettings,
+                    onNavigateToBattery = onNavigateToBattery
+                )
+            }
+
+            // Bottom spacing
+            item { Spacer(Modifier.height(8.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun HeaderSection(onNavigateToSettings: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(
+                text = "Blueth Guard",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = "Device Health",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(onClick = onNavigateToSettings) {
+            Icon(
+                Icons.Outlined.Settings,
+                contentDescription = "Settings",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun ScoreRingSection(state: DashboardState) {
+    val hasScore = state.lastScanTime != null || state.securityError
+    val targetProgress = if (hasScore) state.overallScore / 100f else 0f
+
+    val animatedProgress = remember { Animatable(0f) }
+    LaunchedEffect(targetProgress) {
+        animatedProgress.animateTo(
+            targetValue = targetProgress,
+            animationSpec = tween(1200, easing = FastOutSlowInEasing)
+        )
+    }
+
+    val animatedScore by animateIntAsState(
+        targetValue = if (hasScore) state.overallScore else 0,
+        animationSpec = tween(1200, easing = FastOutSlowInEasing),
+        label = "scoreAnim"
+    )
+
+    val scoreColor = when {
+        !hasScore -> MaterialTheme.colorScheme.onSurfaceVariant
+        state.overallScore >= 75 -> RiskSafe
+        state.overallScore >= 50 -> RiskMedium
+        state.overallScore >= 25 -> RiskHigh
+        else -> RiskCritical
+    }
+
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(180.dp)
+        ) {
+            Canvas(modifier = Modifier.size(180.dp)) {
+                val strokeWidth = 12.dp.toPx()
+                val padding = strokeWidth / 2
+                val arcSize = Size(size.width - strokeWidth, size.height - strokeWidth)
+                val topLeft = Offset(padding, padding)
+
+                // Background track
+                drawArc(
+                    color = trackColor,
+                    startAngle = -90f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+
+                // Foreground arc
+                drawArc(
+                    color = scoreColor,
+                    startAngle = -90f,
+                    sweepAngle = 360f * animatedProgress.value,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+            }
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(32.dp),
+                        strokeWidth = 3.dp
+                    )
+                } else {
+                    Text(
+                        text = if (hasScore) "$animatedScore" else "—",
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = scoreColor
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = state.scoreLabel,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        val context = LocalContext.current
+        val lastScanText = when {
+            state.isLoading -> ""
+            state.lastScanTime != null -> "Last scan: ${
+                DateUtils.getRelativeTimeSpanString(
+                    state.lastScanTime,
+                    System.currentTimeMillis(),
+                    DateUtils.MINUTE_IN_MILLIS
+                )
+            }"
+            else -> "Never scanned"
+        }
+
+        if (lastScanText.isNotEmpty()) {
+            Text(
+                text = lastScanText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun FirstScanButton(onNavigateToSecurity: () -> Unit) {
+    Button(
+        onClick = onNavigateToSecurity,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = BluePrimary)
+    ) {
+        Icon(Icons.Filled.Security, contentDescription = null)
+        Spacer(Modifier.width(8.dp))
+        Text("Start Security Scan", fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun QuickActionsRow(
+    onNavigateToSecurity: () -> Unit,
+    onNavigateToBattery: () -> Unit,
+    onNavigateToPrivacy: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        QuickActionChip(
+            label = "Quick Scan",
+            icon = Icons.Filled.Security,
+            onClick = onNavigateToSecurity,
+            modifier = Modifier.weight(1f)
+        )
+        QuickActionChip(
+            label = "Battery",
+            icon = Icons.Filled.Battery4Bar,
+            onClick = onNavigateToBattery,
+            modifier = Modifier.weight(1f)
+        )
+        QuickActionChip(
+            label = "Privacy",
+            icon = Icons.Filled.Lock,
+            onClick = onNavigateToPrivacy,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun QuickActionChip(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AssistChip(
+        onClick = onClick,
+        label = {
+            Text(
+                label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.labelMedium
+            )
+        },
+        leadingIcon = {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+        },
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            leadingIconContentColor = MaterialTheme.colorScheme.primary
+        )
+    )
+}
+
+@Composable
+private fun ModuleCardsGrid(
+    state: DashboardState,
+    onNavigateToSecurity: () -> Unit,
+    onNavigateToPrivacy: () -> Unit,
+    onNavigateToBattery: () -> Unit,
+    onNavigateToOptimizer: () -> Unit
+) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Row 1: Security + Privacy
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AnimatedVisibility(
+                visible = visible,
+                enter = slideInVertically(
+                    initialOffsetY = { it / 2 },
+                    animationSpec = tween(400, delayMillis = 0)
+                ) + fadeIn(animationSpec = tween(400, delayMillis = 0)),
+                modifier = Modifier.weight(1f)
+            ) {
+                SecurityCard(state = state, onClick = onNavigateToSecurity)
+            }
+
+            AnimatedVisibility(
+                visible = visible,
+                enter = slideInVertically(
+                    initialOffsetY = { it / 2 },
+                    animationSpec = tween(400, delayMillis = 100)
+                ) + fadeIn(animationSpec = tween(400, delayMillis = 100)),
+                modifier = Modifier.weight(1f)
+            ) {
+                PrivacyCard(state = state, onClick = onNavigateToPrivacy)
+            }
+        }
+
+        // Row 2: Battery + Storage
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AnimatedVisibility(
+                visible = visible,
+                enter = slideInVertically(
+                    initialOffsetY = { it / 2 },
+                    animationSpec = tween(400, delayMillis = 200)
+                ) + fadeIn(animationSpec = tween(400, delayMillis = 200)),
+                modifier = Modifier.weight(1f)
+            ) {
+                BatteryCard(state = state, onClick = onNavigateToBattery)
+            }
+
+            AnimatedVisibility(
+                visible = visible,
+                enter = slideInVertically(
+                    initialOffsetY = { it / 2 },
+                    animationSpec = tween(400, delayMillis = 300)
+                ) + fadeIn(animationSpec = tween(400, delayMillis = 300)),
+                modifier = Modifier.weight(1f)
+            ) {
+                StorageCard(state = state, onClick = onNavigateToOptimizer)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModuleCard(
+    icon: ImageVector,
+    title: String,
+    value: String,
+    subtitle: String,
+    indicatorColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    bottomContent: @Composable (() -> Unit)? = null
+) {
+    Card(
+        modifier = modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    icon,
+                    contentDescription = title,
+                    modifier = Modifier.size(24.dp),
+                    tint = indicatorColor
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (bottomContent != null) {
+                Spacer(Modifier.height(4.dp))
+                bottomContent()
+            }
+        }
+    }
+}
+
+@Composable
+private fun SecurityCard(state: DashboardState, onClick: () -> Unit) {
+    val (value, subtitle, color) = when {
+        state.securityError -> Triple("Error", "Unable to load", MaterialTheme.colorScheme.onSurfaceVariant)
+        state.lastScanTime == null -> Triple("—", "Not scanned", MaterialTheme.colorScheme.onSurfaceVariant)
+        state.riskyAppsCount > 0 -> Triple(
+            "${100 - (state.riskyAppsCount * 10).coerceAtMost(100)}",
+            "${state.riskyAppsCount} threats",
+            RiskHigh
+        )
+        else -> Triple("100", "All clear", RiskSafe)
+    }
+    ModuleCard(
+        icon = Icons.Filled.Shield,
+        title = "Security",
+        value = value,
+        subtitle = subtitle,
+        indicatorColor = color,
+        onClick = onClick
+    )
+}
+
+@Composable
+private fun PrivacyCard(state: DashboardState, onClick: () -> Unit) {
+    val (value, subtitle, color) = when {
+        state.privacyError -> Triple("Error", "Unable to load", MaterialTheme.colorScheme.onSurfaceVariant)
+        state.privacyScore == 0 && state.lastScanTime == null -> Triple("—", "Not analyzed", MaterialTheme.colorScheme.onSurfaceVariant)
+        else -> {
+            val c = when {
+                state.privacyScore >= 75 -> RiskSafe
+                state.privacyScore >= 50 -> RiskMedium
+                else -> RiskHigh
+            }
+            Triple(
+                "${state.privacyScore}",
+                "${state.appsWithDangerousPermissions} high-risk apps",
+                c
+            )
+        }
+    }
+    ModuleCard(
+        icon = Icons.Filled.Lock,
+        title = "Privacy",
+        value = value,
+        subtitle = subtitle,
+        indicatorColor = color,
+        onClick = onClick
+    )
+}
+
+@Composable
+private fun BatteryCard(state: DashboardState, onClick: () -> Unit) {
+    val (subtitle, color) = when {
+        state.batteryError -> "Unable to load" to MaterialTheme.colorScheme.onSurfaceVariant
+        state.isCharging -> "Charging" to RiskSafe
+        state.topDrainer != null -> state.topDrainer to MaterialTheme.colorScheme.onSurfaceVariant
+        else -> state.batteryHealth to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    val batteryColor = when {
+        state.batteryError -> MaterialTheme.colorScheme.onSurfaceVariant
+        state.batteryLevel >= 50 -> RiskSafe
+        state.batteryLevel >= 20 -> RiskMedium
+        else -> RiskHigh
+    }
+
+    ModuleCard(
+        icon = if (state.isCharging) Icons.Filled.BatteryChargingFull else Icons.Filled.Battery4Bar,
+        title = "Battery",
+        value = if (state.batteryError) "Error" else "${state.batteryLevel}%",
+        subtitle = subtitle,
+        indicatorColor = batteryColor,
+        onClick = onClick
+    )
+}
+
+@Composable
+private fun StorageCard(state: DashboardState, onClick: () -> Unit) {
+    val context = LocalContext.current
+    val (value, subtitle) = when {
+        state.storageError -> "Error" to "Unable to load"
+        state.totalStorage == 0L -> "—" to "Not analyzed"
+        else -> {
+            val used = Formatter.formatShortFileSize(context, state.usedStorage)
+            val total = Formatter.formatShortFileSize(context, state.totalStorage)
+            "$used / $total" to ""
+        }
+    }
+
+    val usedFraction = if (state.totalStorage > 0) {
+        state.usedStorage.toFloat() / state.totalStorage
+    } else 0f
+
+    val color = when {
+        state.storageError -> MaterialTheme.colorScheme.onSurfaceVariant
+        usedFraction > 0.9f -> RiskHigh
+        usedFraction > 0.75f -> RiskMedium
+        else -> BluePrimary
+    }
+
+    ModuleCard(
+        icon = Icons.Filled.Storage,
+        title = "Storage",
+        value = value,
+        subtitle = subtitle,
+        indicatorColor = color,
+        onClick = onClick,
+        bottomContent = if (state.totalStorage > 0 && !state.storageError) {
+            {
+                LinearProgressIndicator(
+                    progress = { usedFraction },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = color,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+            }
+        } else null
+    )
+}
+
+@Composable
+private fun ProtectionBanner(state: DashboardState, onNavigateToSettings: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onNavigateToSettings),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (state.protectionEnabled)
+                RiskSafe.copy(alpha = 0.1f)
+            else
+                RiskMedium.copy(alpha = 0.1f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (state.protectionEnabled) Icons.Filled.Shield else Icons.Filled.Warning,
+                contentDescription = null,
+                tint = if (state.protectionEnabled) RiskSafe else RiskMedium,
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (state.protectionEnabled) "Real-time Protection Active" else "Protection Disabled",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = if (state.protectionEnabled) {
+                        if (state.installScanEnabled) "Install scanning enabled" else "Monitoring active"
+                    } else {
+                        "Tap to enable protection"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (!state.protectionEnabled) {
+                Button(
+                    onClick = onNavigateToSettings,
+                    colors = ButtonDefaults.buttonColors(containerColor = RiskMedium),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Enable")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AlertsSection(
+    state: DashboardState,
+    onNavigateToPrivacy: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToBattery: () -> Unit
+) {
+    val alerts = buildList {
+        if (state.appsWithDangerousPermissions > 0) {
+            add(AlertItem(
+                text = "${state.appsWithDangerousPermissions} apps with high-risk permissions",
+                color = RiskHigh,
+                onClick = onNavigateToPrivacy
+            ))
+        }
+        if (state.hasScheduledScans && state.lastScanTime == null) {
+            add(AlertItem(
+                text = "Scheduled scan overdue",
+                color = RiskMedium,
+                onClick = onNavigateToSettings
+            ))
+        }
+        if (state.temperature > 38f) {
+            add(AlertItem(
+                text = "Battery temperature elevated: ${state.temperature}°C",
+                color = if (state.temperature > 42f) RiskCritical else RiskHigh,
+                onClick = onNavigateToBattery
+            ))
+        }
+    }
+
+    if (alerts.isEmpty()) return
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Alerts",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        alerts.forEach { alert ->
+            AlertCard(alert = alert)
+        }
+    }
+}
+
+private data class AlertItem(
+    val text: String,
+    val color: Color,
+    val onClick: () -> Unit
+)
+
+@Composable
+private fun AlertCard(alert: AlertItem) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = alert.onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = alert.color.copy(alpha = 0.08f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Filled.Warning,
+                contentDescription = null,
+                tint = alert.color,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = alert.text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
