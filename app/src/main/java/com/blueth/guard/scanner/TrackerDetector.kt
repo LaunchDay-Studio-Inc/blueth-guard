@@ -2,6 +2,7 @@ package com.blueth.guard.scanner
 
 import android.content.Context
 import android.content.pm.PackageManager
+import com.blueth.guard.update.SignatureUpdateManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -129,14 +130,27 @@ object TrackerDatabase {
 
 @Singleton
 class TrackerDetector @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val updateManager: SignatureUpdateManager
 ) {
     fun detectTrackers(packageName: String, permissions: List<String>): List<DetectedTracker> {
         val pm = context.packageManager
         val componentNames = getComponentClassNames(pm, packageName)
         val detected = mutableListOf<DetectedTracker>()
 
+        // Bundled signatures
         for (signature in TrackerDatabase.signatures) {
+            val matched = componentNames.filter { it.startsWith(signature.codeSignature) }
+            if (matched.isNotEmpty()) {
+                detected.add(DetectedTracker(signature, matched))
+            }
+        }
+
+        // Remote signatures
+        val remote = updateManager.getCachedManifest()
+        remote?.trackerSignatures?.trackers?.forEach { entry ->
+            val category = try { TrackerCategory.valueOf(entry.category.uppercase()) } catch (_: Exception) { TrackerCategory.ANALYTICS }
+            val signature = TrackerSignature(entry.name, entry.company, category, entry.codeSignature, entry.networkDomain)
             val matched = componentNames.filter { it.startsWith(signature.codeSignature) }
             if (matched.isNotEmpty()) {
                 detected.add(DetectedTracker(signature, matched))

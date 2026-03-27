@@ -29,6 +29,7 @@ class UserPreferences @Inject constructor(
         val INSTALL_SCAN_ENABLED = booleanPreferencesKey("install_scan_enabled")
         val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        val SIGNATURE_DB_VERSION = intPreferencesKey("signature_db_version")
     }
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data.map { prefs ->
@@ -59,6 +60,10 @@ class UserPreferences @Inject constructor(
         prefs[Keys.ONBOARDING_COMPLETED] ?: false
     }
 
+    val signatureDbVersion: Flow<Int> = context.dataStore.data.map { prefs ->
+        prefs[Keys.SIGNATURE_DB_VERSION] ?: 0
+    }
+
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { it[Keys.THEME_MODE] = mode.ordinal }
     }
@@ -85,5 +90,9 @@ class UserPreferences @Inject constructor(
 
     suspend fun setOnboardingCompleted(completed: Boolean) {
         context.dataStore.edit { it[Keys.ONBOARDING_COMPLETED] = completed }
+    }
+
+    suspend fun setSignatureDbVersion(version: Int) {
+        context.dataStore.edit { it[Keys.SIGNATURE_DB_VERSION] = version }
     }
 }

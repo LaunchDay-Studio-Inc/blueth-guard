@@ -3,6 +3,7 @@ package com.blueth.guard.scanner
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import com.blueth.guard.update.SignatureUpdateManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.security.MessageDigest
 import javax.inject.Inject
@@ -34,7 +35,8 @@ data class PackageSignatureInfo(
 
 @Singleton
 class SignatureDB @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val updateManager: SignatureUpdateManager
 ) {
     private val exactPackages: HashSet<String> = hashSetOf(
         // === HiddenAds family ===
@@ -136,12 +138,24 @@ class SignatureDB @Inject constructor(
     }
 
     fun checkPackageName(packageName: String): SignatureMatch? {
-        // Exact match
-        familyMap[packageName]?.let {
-            return SignatureMatch(it, MatchType.EXACT_PACKAGE)
+        // Exact match (including remote)
+        val mergedExact = getMergedExactPackages()
+        if (packageName in mergedExact) {
+            familyMap[packageName]?.let {
+                return SignatureMatch(it, MatchType.EXACT_PACKAGE)
+            }
+            // Check remote entries for family info
+            val remote = updateManager.getCachedManifest()
+            remote?.malwareSignatures?.exactPackages?.find { it.packageName == packageName }?.let {
+                val severity = try { SignatureSeverity.valueOf(it.severity.uppercase()) } catch (_: Exception) { SignatureSeverity.MEDIUM }
+                return SignatureMatch(
+                    MalwareSignature(it.packageName, it.family, severity, it.description),
+                    MatchType.EXACT_PACKAGE
+                )
+            }
         }
-        // Pattern match
-        for (sig in patternSignatures) {
+        // Pattern match (including remote)
+        for (sig in getMergedPatternSignatures()) {
             if (packageName.startsWith(sig.packagePattern)) {
                 return SignatureMatch(sig, MatchType.PATTERN_MATCH)
             }
@@ -151,7 +165,7 @@ class SignatureDB @Inject constructor(
 
     fun checkCertificate(packageName: String, pm: PackageManager): SignatureMatch? {
         val fingerprint = getCertFingerprint(packageName, pm) ?: return null
-        if (fingerprint in knownBadCertHashes) {
+        if (fingerprint in getMergedCertHashes()) {
             return SignatureMatch(
                 MalwareSignature(packageName, "Unknown", SignatureSeverity.CRITICAL, "Signing certificate matches known malware"),
                 MatchType.CERTIFICATE_MATCH
@@ -238,5 +252,29 @@ class SignatureDB @Inject constructor(
         // Placeholder for known-bad certificate SHA-256 hashes
         // In production, this would be populated with verified malicious cert hashes
         private val knownBadCertHashes = hashSetOf<String>()
+    }
+
+    fun getMergedExactPackages(): Set<String> {
+        val remote = updateManager.getCachedManifest()
+        val merged = exactPackages.toMutableSet()
+        remote?.malwareSignatures?.exactPackages?.forEach { merged.add(it.packageName) }
+        return merged
+    }
+
+    fun getMergedPatternSignatures(): List<MalwareSignature> {
+        val remote = updateManager.getCachedManifest()
+        val merged = patternSignatures.toMutableList()
+        remote?.malwareSignatures?.patterns?.forEach {
+            val severity = try { SignatureSeverity.valueOf(it.severity.uppercase()) } catch (_: Exception) { SignatureSeverity.MEDIUM }
+            merged.add(MalwareSignature(it.pattern, it.family, severity, it.description))
+        }
+        return merged
+    }
+
+    fun getMergedCertHashes(): Set<String> {
+        val remote = updateManager.getCachedManifest()
+        val merged = knownBadCertHashes.toMutableSet()
+        remote?.malwareSignatures?.certHashes?.forEach { merged.add(it) }
+        return merged
     }
 }

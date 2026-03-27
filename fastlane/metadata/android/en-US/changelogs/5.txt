@@ -1,0 +1,8 @@
+v1.0.0-beta1:
+• Security hardening — network security config, backup exclusion, anti-tampering
+• Auto-updating signature database
+• Heuristic threat analysis with 200+ tracker detection
+• Privacy dashboard with permission monitoring
+• Battery guardian with wakelock detection
+• Smart optimizer with bloatware identification
+• Signed release builds

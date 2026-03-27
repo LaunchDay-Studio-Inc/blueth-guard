@@ -1,8 +1,10 @@
 package com.blueth.guard.worker
 
 import android.content.Context
+import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.blueth.guard.data.prefs.ScanInterval
@@ -46,5 +48,26 @@ class ScanScheduler @Inject constructor(
 
     fun cancelScheduledScan() {
         WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+    }
+
+    fun scheduleSignatureUpdates() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val request = PeriodicWorkRequestBuilder<SignatureUpdateWorker>(
+            12, TimeUnit.HOURS,
+            2, TimeUnit.HOURS
+        )
+            .setConstraints(constraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.MINUTES)
+            .build()
+
+        WorkManager.getInstance(context)
+            .enqueueUniquePeriodicWork(
+                "signature_update",
+                ExistingPeriodicWorkPolicy.KEEP,
+                request
+            )
     }
 }

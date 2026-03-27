@@ -8,10 +8,13 @@ import com.blueth.guard.data.prefs.ScanInterval
 import com.blueth.guard.data.prefs.ThemeMode
 import com.blueth.guard.data.prefs.UserPreferences
 import com.blueth.guard.protection.ProtectionService
+import com.blueth.guard.update.SignatureUpdateManager
 import com.blueth.guard.worker.ScanScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,7 +23,8 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val scanScheduler: ScanScheduler,
-    private val reportExporter: ReportExporter
+    private val reportExporter: ReportExporter,
+    private val signatureUpdateManager: SignatureUpdateManager
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> = userPreferences.themeMode
@@ -40,6 +44,25 @@ class SettingsViewModel @Inject constructor(
 
     val notificationEnabled: StateFlow<Boolean> = userPreferences.notificationEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    private val _updateStatus = MutableStateFlow<String?>(null)
+    val updateStatus: StateFlow<String?> = _updateStatus.asStateFlow()
+
+    private val _isUpdating = MutableStateFlow(false)
+    val isUpdating: StateFlow<Boolean> = _isUpdating.asStateFlow()
+
+    fun checkForSignatureUpdates() {
+        viewModelScope.launch {
+            _isUpdating.value = true
+            val result = signatureUpdateManager.checkAndUpdate()
+            _updateStatus.value = result.message
+            _isUpdating.value = false
+        }
+    }
+
+    fun clearUpdateStatus() {
+        _updateStatus.value = null
+    }
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { userPreferences.setThemeMode(mode) }

@@ -15,8 +15,8 @@ android {
         applicationId = "com.blueth.guard"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.0.0-beta1"
+        versionCode = 6
+        versionName = "1.0.0-beta2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,6 +59,18 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    bundle {
+        language {
+            enableSplit = true
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
+        }
     }
 }
 

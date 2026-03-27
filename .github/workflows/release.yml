@@ -40,14 +40,29 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
+      - name: Build release AAB
+        env:
+          KEYSTORE_FILE: ${{ github.workspace }}/release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew bundleRelease
+
       - name: Rename APK
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           mv app/build/outputs/apk/release/*.apk app/build/outputs/apk/release/blueth-guard-${VERSION}.apk
 
+      - name: Rename AAB
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          mv app/build/outputs/bundle/release/*.aab app/build/outputs/bundle/release/blueth-guard-${VERSION}.aab
+
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/blueth-guard-*.apk
+          files: |
+            app/build/outputs/apk/release/blueth-guard-*.apk
+            app/build/outputs/bundle/release/blueth-guard-*.aab
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
