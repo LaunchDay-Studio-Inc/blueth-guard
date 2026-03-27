@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.SystemClock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -63,7 +64,16 @@ class ServiceMonitor @Inject constructor(
                 false
             }
 
-            val runningDuration = now - info.activeSince
+            val runningDuration = run {
+                val raw = now - info.activeSince
+                val elapsed = SystemClock.elapsedRealtime()
+                when {
+                    raw < 0 -> elapsed // negative = bogus
+                    raw > elapsed -> elapsed // exceeds uptime = bogus epoch timestamp
+                    raw > 2_592_000_000L -> elapsed // > 30 days = bogus
+                    else -> raw
+                }
+            }
             val isForeground = info.foreground
 
             val drainImpact = when {

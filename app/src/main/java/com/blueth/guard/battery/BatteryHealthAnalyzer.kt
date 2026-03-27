@@ -16,7 +16,12 @@ data class BatteryHealth(
     val isCharging: Boolean,
     val chargeSource: String,
     val healthScore: Int,
-    val recommendations: List<String>
+    val healthLabel: String,
+    val healthDisclaimer: String?,
+    val recommendations: List<String>,
+    val chargeCounter: Int = 0,
+    val energyCounter: Long = 0,
+    val currentNow: Int = 0
 )
 
 @Singleton
@@ -29,9 +34,14 @@ class BatteryHealthAnalyzer @Inject constructor(
             app.registerReceiver(null, filter)
         }
 
+        // Use BATTERY_PROPERTY_CAPACITY as primary (system's displayed percentage)
+        val batteryManager = app.getSystemService(android.content.Context.BATTERY_SERVICE) as? BatteryManager
+        val capacityPercent = batteryManager?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+
         val level = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
         val scale = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
-        val levelPercent = if (level >= 0 && scale > 0) level * 100 / scale else 0
+        val rawPercent = if (level >= 0 && scale > 0) level * 100 / scale else 0
+        val levelPercent = if (capacityPercent > 0) capacityPercent else rawPercent
 
         val temperature =
             (batteryStatus?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0) / 10f
@@ -73,7 +83,37 @@ class BatteryHealthAnalyzer @Inject constructor(
         if (temperature > 40f) healthScore -= 15
         else if (temperature > 35f) healthScore -= 10
         if (voltage < 3.2f || voltage > 4.35f) healthScore -= 10
+
+        // Charge cycle estimation from BatteryManager properties
+        var hasChargeData = false
+        if (batteryManager != null) {
+            val chargeCounter = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
+            val energyCounter = batteryManager.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER)
+            if (chargeCounter > 0 && energyCounter > 0) {
+                hasChargeData = true
+                // Rough estimate: typical battery is ~4000mAh = 4000000 µAh
+                // If chargeCounter is low relative to expected, battery may be degraded
+                val chargeCounterMah = chargeCounter / 1000
+                if (chargeCounterMah in 1..1500 && levelPercent > 50) {
+                    // Low charge counter at high level suggests degradation
+                    healthScore -= 10
+                }
+            }
+        }
+
         healthScore = healthScore.coerceIn(0, 100)
+
+        val healthLabel = when {
+            healthScore >= 95 -> "Excellent"
+            healthScore >= 80 -> "Good"
+            healthScore >= 60 -> "Fair"
+            healthScore >= 40 -> "Poor"
+            else -> "Critical"
+        }
+
+        val healthDisclaimer = if (!hasChargeData) {
+            "Health score based on current readings only. Battery age and wear cannot be measured without root access."
+        } else null
 
         // Recommendations
         val recommendations = mutableListOf<String>()
@@ -92,6 +132,11 @@ class BatteryHealthAnalyzer @Inject constructor(
             recommendations.add("Charging above 80% accelerates battery wear. Consider unplugging.")
         }
 
+        // Read additional battery properties
+        val chargeCounter = batteryManager?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER) ?: 0
+        val energyCounter = batteryManager?.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER) ?: 0L
+        val currentNow = batteryManager?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) ?: 0
+
         return BatteryHealth(
             levelPercent = levelPercent,
             temperature = temperature,
@@ -101,7 +146,12 @@ class BatteryHealthAnalyzer @Inject constructor(
             isCharging = isCharging,
             chargeSource = chargeSource,
             healthScore = healthScore,
-            recommendations = recommendations
+            healthLabel = healthLabel,
+            healthDisclaimer = healthDisclaimer,
+            recommendations = recommendations,
+            chargeCounter = chargeCounter,
+            energyCounter = energyCounter,
+            currentNow = currentNow
         )
     }
 }

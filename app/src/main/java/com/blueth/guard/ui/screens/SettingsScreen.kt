@@ -1,8 +1,12 @@
 package com.blueth.guard.ui.screens
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.net.VpnService
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +29,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Source
 import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.filled.VpnLock
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -59,6 +64,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blueth.guard.BuildConfig
 import com.blueth.guard.R
+import com.blueth.guard.protection.GuardVpnService
 import com.blueth.guard.data.prefs.ScanInterval
 import com.blueth.guard.data.prefs.ThemeMode
 import com.blueth.guard.ui.viewmodel.SettingsViewModel
@@ -276,6 +282,55 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.settings_notifications_desc),
                         checked = notificationEnabled,
                         onCheckedChange = { viewModel.setNotificationEnabled(it) }
+                    )
+                }
+            }
+        }
+
+        // Web Protection (VPN DNS Filter)
+        item {
+            var vpnEnabled by remember { mutableStateOf(VpnService.prepare(context) == null && GuardVpnService.isRunning) }
+            val vpnPermissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.StartActivityForResult()
+            ) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    vpnEnabled = true
+                    context.startService(Intent(context, GuardVpnService::class.java))
+                } else {
+                    vpnEnabled = false
+                    Toast.makeText(context, "VPN permission denied", Toast.LENGTH_SHORT).show()
+                }
+            }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SettingsToggleRow(
+                        icon = Icons.Filled.VpnLock,
+                        title = "Web Protection",
+                        subtitle = "Block malicious domains via local VPN DNS filter",
+                        checked = vpnEnabled,
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                val prepareIntent = VpnService.prepare(context)
+                                if (prepareIntent != null) {
+                                    vpnPermissionLauncher.launch(prepareIntent)
+                                } else {
+                                    vpnEnabled = true
+                                    context.startService(Intent(context, GuardVpnService::class.java))
+                                }
+                            } else {
+                                vpnEnabled = false
+                                context.stopService(Intent(context, GuardVpnService::class.java))
+                            }
+                        }
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Routes DNS through a local VPN to block known malicious domains. No data leaves your device.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

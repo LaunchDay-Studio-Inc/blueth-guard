@@ -2,6 +2,8 @@ package com.blueth.guard.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.app.AppOpsManager
+import android.app.Application
 import com.blueth.guard.data.local.InstallEvent
 import com.blueth.guard.data.local.NetworkUsageSummary
 import com.blueth.guard.data.local.NetworkUsageTotals
@@ -40,7 +42,8 @@ class PrivacyViewModel @Inject constructor(
     private val installGuard: InstallGuard,
     private val privacyScorer: PrivacyScorer,
     private val appRepository: AppRepository,
-    private val permissionDiffCalculator: PermissionDiffCalculator
+    private val permissionDiffCalculator: PermissionDiffCalculator,
+    private val application: Application
 ) : ViewModel() {
 
     private val _privacyTab = MutableStateFlow(PrivacyTab.OVERVIEW)
@@ -91,8 +94,26 @@ class PrivacyViewModel @Inject constructor(
     private val _permissionDiffs = MutableStateFlow<List<PermissionDiffCalculator.PermissionDiff>>(emptyList())
     val permissionDiffs: StateFlow<List<PermissionDiffCalculator.PermissionDiff>> = _permissionDiffs.asStateFlow()
 
+    private val _hasUsageAccess = MutableStateFlow(false)
+    val hasUsageAccess: StateFlow<Boolean> = _hasUsageAccess.asStateFlow()
+
     init {
+        checkUsageAccess()
         loadAll()
+    }
+
+    private fun checkUsageAccess() {
+        try {
+            val appOps = application.getSystemService(android.content.Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = appOps.unsafeCheckOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(),
+                application.packageName
+            )
+            _hasUsageAccess.value = mode == AppOpsManager.MODE_ALLOWED
+        } catch (_: Exception) {
+            _hasUsageAccess.value = false
+        }
     }
 
     fun loadAll() {
@@ -174,8 +195,18 @@ class PrivacyViewModel @Inject constructor(
     }
 
     fun refreshNetworkStats() {
+        checkUsageAccess()
+        if (!_hasUsageAccess.value) {
+            _topDataConsumers.value = emptyList()
+            _networkTotals.value = null
+            _suspiciousApps.value = emptyList()
+            return
+        }
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
+            // Clear stale data first
+            _topDataConsumers.value = emptyList()
+            _networkTotals.value = null
             networkMonitor.collectNetworkStats(_networkTimeRange.value)
             _topDataConsumers.value = networkMonitor.getTopDataConsumers(_networkTimeRange.value).first()
             _networkTotals.value = networkMonitor.getTotalUsage(_networkTimeRange.value).first()

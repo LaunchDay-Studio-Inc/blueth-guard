@@ -160,6 +160,7 @@ fun OptimizerScreen(
                     OptimizerTab.PROCESSES -> ProcessesTab(optimizerViewModel, context)
                     OptimizerTab.DUPLICATES -> DuplicatesTab(optimizerViewModel, context)
                     OptimizerTab.BLOATWARE -> BloatwareTab(optimizerViewModel, context)
+                    OptimizerTab.HIBERNATE -> HibernateTab(optimizerViewModel, context)
                 }
             }
         }
@@ -317,7 +318,8 @@ private fun OptimizerTabRow(viewModel: OptimizerViewModel, currentTab: Optimizer
         OptimizerTab.CACHE to Pair(stringResource(R.string.optimizer_tab_cache), appCaches.count { it.cacheSize > 1_048_576 }),
         OptimizerTab.PROCESSES to Pair(stringResource(R.string.optimizer_tab_processes), killableProcesses.size),
         OptimizerTab.DUPLICATES to Pair(stringResource(R.string.optimizer_tab_duplicates), duplicateGroups.size),
-        OptimizerTab.BLOATWARE to Pair(stringResource(R.string.optimizer_tab_bloatware), bloatwareCount)
+        OptimizerTab.BLOATWARE to Pair(stringResource(R.string.optimizer_tab_bloatware), bloatwareCount),
+        OptimizerTab.HIBERNATE to Pair("Hibernate", killableProcesses.size)
     )
 
     ScrollableTabRow(
@@ -357,6 +359,32 @@ private fun OverviewTab(viewModel: OptimizerViewModel, context: Context) {
     val ramAvailable by viewModel.ramAvailable.collectAsState()
     val killableProcesses by viewModel.killableProcesses.collectAsState()
     var isRefreshing by remember { mutableStateOf(false) }
+    var showOptimizeConfirm by remember { mutableStateOf(false) }
+
+    if (showOptimizeConfirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showOptimizeConfirm = false },
+            title = { Text("One-Tap Optimize") },
+            text = {
+                Text(
+                    "This will:\n" +
+                    "• Kill ${killableProcesses.size} background processes\n" +
+                    "• Open storage settings to clear caches\n\n" +
+                    "Apps will restart normally on next use."
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showOptimizeConfirm = false
+                    viewModel.killAllKillable()
+                    viewModel.clearAllCaches()
+                }) { Text("Optimize") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showOptimizeConfirm = false }) { Text("Cancel") }
+            }
+        )
+    }
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -427,10 +455,7 @@ private fun OverviewTab(viewModel: OptimizerViewModel, context: Context) {
             // One-tap optimize
             item {
                 Button(
-                    onClick = {
-                        viewModel.killAllKillable()
-                        viewModel.clearAllCaches()
-                    },
+                    onClick = { showOptimizeConfirm = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -1372,5 +1397,88 @@ private fun StorageBreakdownChart(breakdown: StorageBreakdown, context: Context)
                 }
             }
         }
+    }
+}
+
+// ========== Hibernate Tab ==========
+
+@Composable
+private fun HibernateTab(viewModel: OptimizerViewModel, context: Context) {
+    val killableProcesses by viewModel.killableProcesses.collectAsState()
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item { Spacer(Modifier.height(8.dp)) }
+        item {
+            Text("App Hibernation", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Hibernate background apps to free memory. Uses killBackgroundProcesses — apps restart on next use.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        if (killableProcesses.isNotEmpty()) {
+            item {
+                Button(
+                    onClick = { viewModel.hibernateAll() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Hibernate All (${killableProcesses.size} apps)")
+                }
+            }
+
+            items(killableProcesses, key = { it.packageName }) { process ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                process.appName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                "${Formatter.formatFileSize(context, process.memoryUsageKb * 1024)} RAM",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        OutlinedButton(onClick = { viewModel.hibernateApp(process.packageName) }) {
+                            Text("Hibernate", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+        } else {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Text(
+                        "No background apps to hibernate",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        item { Spacer(Modifier.height(8.dp)) }
     }
 }

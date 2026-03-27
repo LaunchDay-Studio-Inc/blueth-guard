@@ -32,6 +32,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.blueth.guard.ui.screens.AntiTheftScreen
 import com.blueth.guard.ui.screens.BatteryScreen
 import com.blueth.guard.ui.screens.HomeScreen
 import com.blueth.guard.ui.screens.OptimizerScreen
@@ -48,6 +49,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object BatteryRoute
 @Serializable data object SettingsRoute
 @Serializable data object ScanHistoryRoute
+@Serializable data object AntiTheftRoute
 
 data class TopLevelRoute(
     val label: String,
@@ -84,12 +86,17 @@ fun MainNavGraph() {
                     NavigationBarItem(
                         selected = selected,
                         onClick = {
-                            navController.navigate(topLevelRoute.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                            if (selected) {
+                                // Already on this tab — pop to start to reset scroll
+                                navController.popBackStack(topLevelRoute.route, inclusive = false)
+                            } else {
+                                navController.navigate(topLevelRoute.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
                         },
                         icon = {
@@ -134,7 +141,8 @@ fun MainNavGraph() {
                     onNavigateToPrivacy = { navController.navigate(PrivacyRoute) },
                     onNavigateToBattery = { navController.navigate(BatteryRoute) },
                     onNavigateToOptimizer = { navController.navigate(OptimizerRoute) },
-                    onNavigateToSettings = { navController.navigate(SettingsRoute) }
+                    onNavigateToSettings = { navController.navigate(SettingsRoute) },
+                    onNavigateToAntiTheft = { navController.navigate(AntiTheftRoute) }
                 )
             }
             composable<SecurityRoute> {
@@ -148,6 +156,9 @@ fun MainNavGraph() {
             composable<SettingsRoute> { SettingsScreen() }
             composable<ScanHistoryRoute> {
                 ScanHistoryScreen(onNavigateBack = { navController.popBackStack() })
+            }
+            composable<AntiTheftRoute> {
+                AntiTheftScreen(onNavigateBack = { navController.popBackStack() })
             }
         }
     }

@@ -33,6 +33,16 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
 
+    <!-- WiFi security -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!-- Location (for anti-theft) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Vibrate (for anti-theft alarm) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:name=".BluethGuardApp"
         android:allowBackup="false"
@@ -106,6 +116,29 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/guard_widget_info" />
+        </receiver>
+
+        <!-- VPN Service for DNS filtering -->
+        <service
+            android:name=".protection.GuardVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+
+        <!-- Device Admin Receiver for Anti-Theft -->
+        <receiver
+            android:name=".antitheft.GuardDeviceAdminReceiver"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin_policies" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
         </receiver>
     </application>
 </manifest>

@@ -43,6 +43,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -73,11 +74,13 @@ import com.blueth.guard.R
 import com.blueth.guard.scanner.AppScanResult
 import com.blueth.guard.scanner.DeviceAdminAppInfo
 import com.blueth.guard.scanner.RiskLevel
+import com.blueth.guard.scanner.FileSeverity
 import com.blueth.guard.ui.theme.RiskCritical
 import com.blueth.guard.ui.theme.RiskHigh
 import com.blueth.guard.ui.theme.RiskLow
 import com.blueth.guard.ui.theme.RiskMedium
 import com.blueth.guard.ui.theme.RiskSafe
+import com.blueth.guard.ui.viewmodel.DeepScanState
 import com.blueth.guard.ui.viewmodel.ScanState
 import com.blueth.guard.ui.viewmodel.SecurityViewModel
 
@@ -91,6 +94,10 @@ fun SecurityScreen(
     val scanResults by viewModel.scanResults.collectAsState()
     val overallScore by viewModel.overallDeviceScore.collectAsState()
     val deviceAdmins by viewModel.deviceAdmins.collectAsState()
+    val deepScanState by viewModel.deepScanState.collectAsState()
+    val deepScanProgress by viewModel.deepScanProgress.collectAsState()
+    val deepScanResults by viewModel.deepScanResults.collectAsState()
+    val deepScanStats by viewModel.deepScanStats.collectAsState()
 
     val isScanning = scanState == ScanState.SCANNING
     val scanComplete = scanState == ScanState.COMPLETE
@@ -255,7 +262,7 @@ fun SecurityScreen(
                     )
                 }
                 items(sortedResults, key = { it.appInfo.packageName }) { result ->
-                    ScanResultCard(result, onLongClick = { selectedApp = result })
+                    ScanResultCard(result, onClick = { selectedApp = result }, onLongClick = { selectedApp = result })
                 }
             }
             // View Scan History button
@@ -271,6 +278,113 @@ fun SecurityScreen(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.security_view_scan_history))
+                }
+            }
+        }
+
+        // Deep File Scan section
+        item {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Deep File Scanner",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Scan storage for malware, suspicious files, and corruption",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        item {
+            val isDeepScanning = deepScanState == DeepScanState.SCANNING
+            Button(
+                onClick = { viewModel.startDeepScan() },
+                enabled = !isDeepScanning,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isDeepScanning) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    val prog = deepScanProgress
+                    Text(if (prog != null) "Scanning ${prog.scannedFiles}/${prog.totalFiles}..." else "Scanning...")
+                } else {
+                    Icon(Icons.Filled.Shield, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (deepScanState == DeepScanState.COMPLETE) "Re-scan Storage" else "Scan Storage")
+                }
+            }
+        }
+
+        // Deep scan results
+        if (deepScanState == DeepScanState.COMPLETE) {
+            deepScanStats?.let { stats ->
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Scan Complete", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(4.dp))
+                            Text("${stats.filesScanned} files scanned in ${stats.scanDurationMs / 1000}s",
+                                style = MaterialTheme.typography.bodySmall)
+                            Text("${stats.threatsFound} threats, ${stats.corruptedFound} corrupted files found",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (stats.threatsFound > 0) RiskCritical else RiskSafe)
+                        }
+                    }
+                }
+            }
+
+            if (deepScanResults.isNotEmpty()) {
+                items(deepScanResults) { result ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val sevColor = when (result.severity) {
+                                FileSeverity.CRITICAL -> RiskCritical
+                                FileSeverity.HIGH -> RiskHigh
+                                FileSeverity.MEDIUM -> RiskMedium
+                                FileSeverity.LOW -> RiskLow
+                                else -> RiskSafe
+                            }
+                            Icon(
+                                Icons.Filled.Warning,
+                                contentDescription = null,
+                                tint = sevColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    result.fileName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    result.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -513,7 +627,7 @@ private fun DeviceAdminWarningCard(admins: List<DeviceAdminAppInfo>) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ScanResultCard(result: AppScanResult, onLongClick: () -> Unit = {}) {
+private fun ScanResultCard(result: AppScanResult, onClick: () -> Unit = {}, onLongClick: () -> Unit = {}) {
     var expanded by remember { mutableStateOf(false) }
     val riskColor = when (result.threatAssessment.riskLevel) {
         RiskLevel.CRITICAL -> RiskCritical
@@ -532,7 +646,7 @@ private fun ScanResultCard(result: AppScanResult, onLongClick: () -> Unit = {}) 
         Column(
             modifier = Modifier
                 .combinedClickable(
-                    onClick = { expanded = !expanded },
+                    onClick = onClick,
                     onLongClick = onLongClick
                 )
                 .padding(12.dp)

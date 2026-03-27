@@ -444,17 +444,21 @@ private fun RecommendationCard(rec: PrivacyRecommendation, context: android.cont
                 Text(rec.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                 Text(rec.description, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (rec.targetPackage != null) {
-                IconButton(onClick = {
-                    try {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = android.net.Uri.parse("package:${rec.targetPackage}")
-                        }
-                        context.startActivity(intent)
-                    } catch (_: Exception) { }
-                }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Outlined.Info, contentDescription = "Details", modifier = Modifier.size(18.dp))
+                if (rec.targetPackage != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            try {
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = android.net.Uri.parse("package:${rec.targetPackage}")
+                                }
+                                context.startActivity(intent)
+                            } catch (_: Exception) { }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Fix Now — Open App Settings")
+                    }
                 }
             }
         }
@@ -463,8 +467,18 @@ private fun RecommendationCard(rec: PrivacyRecommendation, context: android.cont
 
 @Composable
 private fun IntrusiveAppRow(score: AppPrivacyScore) {
+    val context = LocalContext.current
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                try {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = android.net.Uri.parse("package:${score.packageName}")
+                    }
+                    context.startActivity(intent)
+                } catch (_: Exception) { }
+            },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
@@ -830,6 +844,7 @@ private fun NetworkTab(viewModel: PrivacyViewModel) {
     val totals by viewModel.networkTotals.collectAsState()
     val suspiciousApps by viewModel.suspiciousApps.collectAsState()
     val timeRange by viewModel.networkTimeRange.collectAsState()
+    val hasUsageAccess by viewModel.hasUsageAccess.collectAsState()
     val context = LocalContext.current
 
     LazyColumn(
@@ -861,6 +876,55 @@ private fun NetworkTab(viewModel: PrivacyViewModel) {
             }
         }
 
+        // Permission check
+        if (!hasUsageAccess) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = RiskMedium.copy(alpha = 0.15f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            Icons.Filled.Warning,
+                            contentDescription = null,
+                            tint = RiskMedium,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            "Network monitoring requires Usage Access permission",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Without this permission, network data cannot be collected accurately.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                try {
+                                    context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                                } catch (_: Exception) { }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Grant Permission")
+                        }
+                    }
+                }
+            }
+            item { Spacer(Modifier.height(16.dp)) }
+            return@LazyColumn
+        }
+
         // Total usage card
         item {
             Card(
@@ -872,6 +936,15 @@ private fun NetworkTab(viewModel: PrivacyViewModel) {
                         fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
                     totals?.let { t ->
+                        if (t.totalTx == 0L && t.totalRx == 0L) {
+                            Text(
+                                "No network activity recorded in this period",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
@@ -899,6 +972,7 @@ private fun NetworkTab(viewModel: PrivacyViewModel) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center)
+                        }
                     } ?: run {
                         EmptyStateContent(
                             icon = Icons.Filled.NetworkCheck,

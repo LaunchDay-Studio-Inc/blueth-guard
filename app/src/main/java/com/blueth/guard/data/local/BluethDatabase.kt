@@ -13,7 +13,7 @@ import androidx.room.TypeConverters
         BatterySnapshot::class,
         ScanHistoryEntry::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

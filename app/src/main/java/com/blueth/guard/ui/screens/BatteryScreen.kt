@@ -39,7 +39,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,6 +75,9 @@ import com.blueth.guard.battery.DrainImpact
 import com.blueth.guard.battery.RunningServiceInfo
 import com.blueth.guard.battery.WakelockInfo
 import com.blueth.guard.battery.WakelockSeverity
+import com.blueth.guard.battery.BatteryHistoryReport
+import com.blueth.guard.battery.PowerProfile
+import com.blueth.guard.battery.PowerProfileConfig
 import com.blueth.guard.ui.theme.BluePrimary
 import com.blueth.guard.ui.theme.CyanSecondary
 import com.blueth.guard.ui.theme.RiskCritical
@@ -95,13 +100,18 @@ fun BatteryScreen(
     val lastRefresh by viewModel.lastRefreshTimestamp.collectAsState()
     val batteryAlerts by viewModel.batteryAlerts.collectAsState()
     val batteryHistory by viewModel.batteryHistory.collectAsState()
+    val activeProfile by viewModel.activeProfile.collectAsState()
+    val profileConfigs by viewModel.profileConfigs.collectAsState()
+    val historyReport by viewModel.historyReport.collectAsState()
+    val chargeGuardActive by viewModel.chargeGuardActive.collectAsState()
 
     val tabs = BatteryTab.entries
     val tabTitles = listOf(
         stringResource(R.string.battery_tab_overview),
         stringResource(R.string.battery_tab_wakelocks),
         stringResource(R.string.battery_tab_services),
-        stringResource(R.string.battery_tab_drain)
+        stringResource(R.string.battery_tab_drain),
+        "Profiles"
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -155,6 +165,12 @@ fun BatteryScreen(
                 BatteryTab.WAKELOCKS -> WakelocksTab(wakelocks)
                 BatteryTab.SERVICES -> ServicesTab(services)
                 BatteryTab.DRAIN -> DrainTab(drainEstimates)
+                BatteryTab.PROFILES -> ProfilesTab(
+                    profileConfigs, activeProfile, chargeGuardActive,
+                    historyReport,
+                    onActivateProfile = { viewModel.activateProfile(it) },
+                    onToggleChargeGuard = { viewModel.toggleChargeGuard(it) }
+                )
             }
         }
     }
@@ -239,7 +255,7 @@ private fun OverviewTab(
                             .padding(horizontal = 12.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            "Health Score: ${health.healthScore}/100",
+                            "Health: ${health.healthLabel} (${health.healthScore}/100)",
                             style = MaterialTheme.typography.labelMedium,
                             color = scoreColor,
                             fontWeight = FontWeight.Bold
@@ -251,6 +267,14 @@ private fun OverviewTab(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    health.healthDisclaimer?.let { disclaimer ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            disclaimer,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -508,6 +532,7 @@ private fun WakelocksTab(wakelocks: List<WakelockInfo>) {
 
 @Composable
 private fun WakelockItem(wl: WakelockInfo) {
+    val context = LocalContext.current
     val severityColor = when (wl.severity) {
         WakelockSeverity.LOW -> RiskSafe
         WakelockSeverity.MEDIUM -> RiskMedium
@@ -560,6 +585,22 @@ private fun WakelockItem(wl: WakelockInfo) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            }
+            if (wl.severity == WakelockSeverity.HIGH || wl.severity == WakelockSeverity.CRITICAL) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        val intent = android.content.Intent(
+                            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        ).apply {
+                            data = android.net.Uri.fromParts("package", wl.packageName, null)
+                        }
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Restrict Background", style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
@@ -826,6 +867,22 @@ private fun DrainItem(est: AppDrainEstimate) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (est.drainCategory == DrainCategory.HIGH || est.drainCategory == DrainCategory.EXTREME) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        val intent = android.content.Intent(
+                            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        ).apply {
+                            data = android.net.Uri.fromParts("package", est.packageName, null)
+                        }
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Restrict Background", style = MaterialTheme.typography.labelSmall)
+                }
+            }
         }
     }
 }
@@ -889,6 +946,7 @@ private fun BatteryDetailCard(
 }
 
 private fun formatDuration(ms: Long): String {
+    if (ms < 0 || ms > 2_592_000_000L) return "Since boot" // > 30 days
     val totalMinutes = ms / 60_000
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
@@ -959,5 +1017,155 @@ private fun BatteryAlertsSection(alerts: List<BatteryAlertEngine.BatteryAlert>) 
                 }
             }
         }
+    }
+}
+
+// ── PROFILES TAB ──────────────────────────────────────────────────────────────
+
+@Composable
+private fun ProfilesTab(
+    profileConfigs: List<PowerProfileConfig>,
+    activeProfile: PowerProfile,
+    chargeGuardActive: Boolean,
+    historyReport: BatteryHistoryReport?,
+    onActivateProfile: (PowerProfile) -> Unit,
+    onToggleChargeGuard: (Boolean) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item { Spacer(Modifier.height(8.dp)) }
+
+        // Power Profiles
+        item {
+            Text("Power Profiles", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+
+        items(profileConfigs.size) { index ->
+            val config = profileConfigs[index]
+            val isActive = config.profile == activeProfile
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onActivateProfile(config.profile) },
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isActive)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    else MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            config.label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium
+                        )
+                        if (isActive) {
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "ACTIVE",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Text(
+                        config.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        // Charge Guard
+        item {
+            Spacer(Modifier.height(8.dp))
+            Text("Charge Guard", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Alert at 80%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                            Text(
+                                "Get notified to unplug when battery reaches 80% to preserve battery longevity",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = chargeGuardActive,
+                            onCheckedChange = onToggleChargeGuard
+                        )
+                    }
+                }
+            }
+        }
+
+        // Battery History Report
+        historyReport?.let { report ->
+            item {
+                Spacer(Modifier.height(8.dp))
+                Text("Battery History", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        if (report.hasEnoughData) {
+                            Text("Est. charge cycles: ${"%.1f".format(report.estimatedChargeCycles)}",
+                                style = MaterialTheme.typography.bodyMedium)
+                            Text("Avg temperature: ${"%.1f".format(report.averageTemperature)}°C",
+                                style = MaterialTheme.typography.bodyMedium)
+                            Text("Max temperature: ${"%.1f".format(report.maxTemperature)}°C",
+                                style = MaterialTheme.typography.bodyMedium)
+                            Text("Overnight charges: ${report.overnightChargingCount}",
+                                style = MaterialTheme.typography.bodyMedium)
+                            report.degradationTrend?.let { trend ->
+                                Text(
+                                    "Degradation trend: ${trend.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = when (trend) {
+                                        com.blueth.guard.battery.DegradationTrend.STABLE -> RiskSafe
+                                        com.blueth.guard.battery.DegradationTrend.SLIGHT_DECLINE -> RiskMedium
+                                        com.blueth.guard.battery.DegradationTrend.DECLINING -> RiskHigh
+                                        com.blueth.guard.battery.DegradationTrend.RAPID_DECLINE -> RiskCritical
+                                    }
+                                )
+                            }
+                        } else {
+                            Text(
+                                "Not enough data yet — keep using the app to build battery history",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        report.disclaimer?.let {
+                            Spacer(Modifier.height(4.dp))
+                            Text(it,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        }
+
+        item { Spacer(Modifier.height(8.dp)) }
     }
 }

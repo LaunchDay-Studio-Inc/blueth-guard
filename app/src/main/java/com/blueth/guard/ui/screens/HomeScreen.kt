@@ -97,6 +97,7 @@ fun HomeScreen(
     onNavigateToBattery: () -> Unit = {},
     onNavigateToOptimizer: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToAntiTheft: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.dashboardState.collectAsState()

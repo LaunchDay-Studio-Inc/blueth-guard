@@ -3,6 +3,7 @@ package com.blueth.guard.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blueth.guard.optimizer.AppCacheInfo
+import com.blueth.guard.optimizer.AppHibernator
 import com.blueth.guard.optimizer.BloatwareApp
 import com.blueth.guard.optimizer.BloatwareIdentifier
 import com.blueth.guard.optimizer.CacheCleaner
@@ -24,7 +25,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 enum class OptimizerTab {
-    OVERVIEW, CACHE, PROCESSES, DUPLICATES, BLOATWARE
+    OVERVIEW, CACHE, PROCESSES, DUPLICATES, BLOATWARE, HIBERNATE
 }
 
 @HiltViewModel
@@ -33,7 +34,8 @@ class OptimizerViewModel @Inject constructor(
     private val cacheCleaner: CacheCleaner,
     private val processManager: ProcessManager,
     private val duplicateFinder: DuplicateFinder,
-    private val bloatwareIdentifier: BloatwareIdentifier
+    private val bloatwareIdentifier: BloatwareIdentifier,
+    private val appHibernator: AppHibernator
 ) : ViewModel() {
 
     private val _storageBreakdown = MutableStateFlow<StorageBreakdown?>(null)
@@ -233,6 +235,23 @@ class OptimizerViewModel @Inject constructor(
     }
 
     fun getDetectedManufacturer(): String = bloatwareIdentifier.getDetectedManufacturer()
+
+    fun hibernateAll() {
+        viewModelScope.launch {
+            val killable = _killableProcesses.value
+            val result = appHibernator.hibernateApps(killable.map { it.packageName })
+            _snackbarMessage.value = result.message
+            refreshProcesses()
+        }
+    }
+
+    fun hibernateApp(packageName: String) {
+        viewModelScope.launch {
+            val success = appHibernator.hibernateApp(packageName)
+            _snackbarMessage.value = if (success) "App hibernated" else "Failed to hibernate"
+            refreshProcesses()
+        }
+    }
 
     private suspend fun loadBloatware() {
         val apps = bloatwareIdentifier.identifyBloatware()

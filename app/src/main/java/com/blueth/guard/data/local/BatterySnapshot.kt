@@ -11,5 +11,8 @@ data class BatterySnapshot(
     val temperature: Float,
     val voltage: Float,
     val isCharging: Boolean,
-    val healthScore: Int
+    val healthScore: Int,
+    val chargeCounter: Int = 0,
+    val energyCounter: Long = 0,
+    val currentNow: Int = 0
 )

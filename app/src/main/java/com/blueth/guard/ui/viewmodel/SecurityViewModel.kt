@@ -5,8 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.blueth.guard.data.local.ScanHistoryDao
 import com.blueth.guard.data.local.ScanHistoryEntry
 import com.blueth.guard.scanner.AppScanResult
+import com.blueth.guard.scanner.DeepFileScanner
+import com.blueth.guard.scanner.DeepScanProgress
+import com.blueth.guard.scanner.DeepScanStats
 import com.blueth.guard.scanner.DeviceAdminAppInfo
 import com.blueth.guard.scanner.DeviceAdminChecker
+import com.blueth.guard.scanner.FileScanResult
 import com.blueth.guard.scanner.RiskLevel
 import com.blueth.guard.scanner.ScanProgress
 import com.blueth.guard.scanner.SecurityScanner
@@ -22,12 +26,14 @@ import kotlinx.serialization.json.put
 import javax.inject.Inject
 
 enum class ScanState { IDLE, SCANNING, COMPLETE }
+enum class DeepScanState { IDLE, SCANNING, COMPLETE }
 
 @HiltViewModel
 class SecurityViewModel @Inject constructor(
     private val securityScanner: SecurityScanner,
     private val deviceAdminChecker: DeviceAdminChecker,
-    private val scanHistoryDao: ScanHistoryDao
+    private val scanHistoryDao: ScanHistoryDao,
+    private val deepFileScanner: DeepFileScanner
 ) : ViewModel() {
 
     private val _scanState = MutableStateFlow(ScanState.IDLE)
@@ -44,6 +50,19 @@ class SecurityViewModel @Inject constructor(
 
     private val _deviceAdmins = MutableStateFlow<List<DeviceAdminAppInfo>>(emptyList())
     val deviceAdmins: StateFlow<List<DeviceAdminAppInfo>> = _deviceAdmins.asStateFlow()
+
+    // Deep file scan
+    private val _deepScanState = MutableStateFlow(DeepScanState.IDLE)
+    val deepScanState: StateFlow<DeepScanState> = _deepScanState.asStateFlow()
+
+    private val _deepScanProgress = MutableStateFlow<DeepScanProgress?>(null)
+    val deepScanProgress: StateFlow<DeepScanProgress?> = _deepScanProgress.asStateFlow()
+
+    private val _deepScanResults = MutableStateFlow<List<FileScanResult>>(emptyList())
+    val deepScanResults: StateFlow<List<FileScanResult>> = _deepScanResults.asStateFlow()
+
+    private val _deepScanStats = MutableStateFlow<DeepScanStats?>(null)
+    val deepScanStats: StateFlow<DeepScanStats?> = _deepScanStats.asStateFlow()
 
     fun startFullScan() {
         if (_scanState.value == ScanState.SCANNING) return
@@ -117,5 +136,22 @@ class SecurityViewModel @Inject constructor(
             }
         }
         return if (totalWeight > 0) (weightedSum / totalWeight).toInt() else 0
+    }
+
+    fun startDeepScan() {
+        if (_deepScanState.value == DeepScanState.SCANNING) return
+        viewModelScope.launch {
+            _deepScanState.value = DeepScanState.SCANNING
+            _deepScanResults.value = emptyList()
+            _deepScanStats.value = null
+
+            val (results, stats) = deepFileScanner.scan { progress ->
+                _deepScanProgress.value = progress
+            }
+
+            _deepScanResults.value = results
+            _deepScanStats.value = stats
+            _deepScanState.value = DeepScanState.COMPLETE
+        }
     }
 }
