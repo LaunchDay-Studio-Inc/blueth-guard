@@ -15,16 +15,29 @@ android {
         applicationId = "com.blueth.guard"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.0.0-alpha4"
+        versionCode = 5
+        versionName = "1.0.0-beta1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            val storeFilePath = System.getenv("KEYSTORE_FILE") ?: findProperty("KEYSTORE_FILE") as? String
+            if (storeFilePath != null) {
+                storeFile = file(storeFilePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: findProperty("KEYSTORE_PASSWORD") as? String ?: ""
+                keyAlias = System.getenv("KEY_ALIAS") ?: findProperty("KEY_ALIAS") as? String ?: ""
+                keyPassword = System.getenv("KEY_PASSWORD") ?: findProperty("KEY_PASSWORD") as? String ?: ""
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

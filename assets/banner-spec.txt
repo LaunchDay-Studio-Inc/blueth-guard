@@ -1,0 +1,8 @@
+TODO: Add banner.png (1200x400, dark blue, shield icon, 'Blueth Guard' title)
+
+Specs:
+- Size: 1200x400
+- Background: Dark blue/black gradient (#0A1628 to #1A2744)
+- Title: "Blueth Guard" in large white text
+- Icon: Shield
+- Tagline: "Security. Privacy. Performance."

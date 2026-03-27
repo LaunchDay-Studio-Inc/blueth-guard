@@ -33,6 +33,9 @@ class ProtectionService : Service() {
     @Inject
     lateinit var userPreferences: UserPreferences
 
+    @Inject
+    lateinit var integrityChecker: IntegrityChecker
+
     private val serviceScope = CoroutineScope(Dispatchers.Default + Job())
     private var packageReceiver: BroadcastReceiver? = null
     private var lastDebugStatus: DebugStatus? = null
@@ -94,6 +97,16 @@ class ProtectionService : Service() {
                     }
                 }
                 lastDebugStatus = debugStatus
+
+                // Check app integrity
+                val integrity = integrityChecker.check()
+                if (integrity.isDebuggable || integrity.installerTampered) {
+                    notificationHelper.showSecurityAlert(
+                        "App Integrity Warning",
+                        "Potential tampering detected: ${integrity.severity} severity",
+                        null
+                    )
+                }
 
                 // Check suspicious accessibility services
                 val suspicious = accessibilityWatcher.getSuspiciousServices()

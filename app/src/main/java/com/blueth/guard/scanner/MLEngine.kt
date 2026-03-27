@@ -23,7 +23,7 @@ enum class RiskLevel(val label: String) {
     }
 }
 
-enum class ScanMethod { HEURISTIC, ML_TFLITE }
+enum class ScanMethod { HEURISTIC }
 
 data class ThreatReason(
     val category: String,
