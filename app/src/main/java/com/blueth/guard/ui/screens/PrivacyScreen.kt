@@ -2,6 +2,7 @@ package com.blueth.guard.ui.screens
 
 import android.Manifest
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
@@ -250,7 +251,7 @@ private fun OverviewTab(viewModel: PrivacyViewModel) {
         // Quick Stats Grid
         item {
             deviceScore?.stats?.let { stats ->
-                QuickStatsGrid(stats)
+                QuickStatsGrid(stats, viewModel)
             }
         }
 
@@ -345,8 +346,15 @@ private fun PrivacyScoreCircle(score: Int) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun QuickStatsGrid(stats: com.blueth.guard.privacy.PrivacyStats) {
+private fun QuickStatsGrid(
+    stats: com.blueth.guard.privacy.PrivacyStats,
+    viewModel: PrivacyViewModel
+) {
+    val context = LocalContext.current
+    var detailSheet by remember { mutableStateOf<String?>(null) }
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -357,14 +365,16 @@ private fun QuickStatsGrid(stats: com.blueth.guard.privacy.PrivacyStats) {
                 icon = Icons.Filled.Camera,
                 label = "Camera Access",
                 value = "${stats.appsWithCamera}",
-                color = if (stats.appsWithCamera > 10) RiskHigh else CyanSecondary
+                color = if (stats.appsWithCamera > 10) RiskHigh else CyanSecondary,
+                onClick = { detailSheet = "camera" }
             )
             QuickStatCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Filled.LocationOn,
                 label = "Location Access",
                 value = "${stats.appsWithLocation}",
-                color = if (stats.appsWithLocation > 15) RiskHigh else CyanSecondary
+                color = if (stats.appsWithLocation > 15) RiskHigh else CyanSecondary,
+                onClick = { detailSheet = "location" }
             )
         }
         Row(
@@ -376,15 +386,107 @@ private fun QuickStatsGrid(stats: com.blueth.guard.privacy.PrivacyStats) {
                 icon = Icons.Filled.GetApp,
                 label = "Sideloaded",
                 value = "${stats.sideloadedApps}",
-                color = if (stats.sideloadedApps > 0) RiskMedium else RiskSafe
+                color = if (stats.sideloadedApps > 0) RiskMedium else RiskSafe,
+                onClick = { detailSheet = "sideloaded" }
             )
             QuickStatCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Filled.GppBad,
                 label = "High Risk",
                 value = "${stats.highRiskApps}",
-                color = if (stats.highRiskApps > 0) RiskCritical else RiskSafe
+                color = if (stats.highRiskApps > 0) RiskCritical else RiskSafe,
+                onClick = { detailSheet = "highrisk" }
             )
+        }
+    }
+
+    if (detailSheet != null) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { detailSheet = null },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            val title: String
+            val items: List<Pair<String, String>> // name, packageName
+
+            when (detailSheet) {
+                "camera" -> {
+                    title = "Apps with Camera Access"
+                    val apps = viewModel.getAppsWithPermission(Manifest.permission.CAMERA)
+                    items = apps.map { it.name to it.packageName }
+                }
+                "location" -> {
+                    title = "Apps with Location Access"
+                    val apps = viewModel.getAppsWithPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                    items = apps.map { it.name to it.packageName }
+                }
+                "sideloaded" -> {
+                    title = "Sideloaded Apps"
+                    val apps = viewModel.getSideloadedApps()
+                    items = apps.map { it.name to it.packageName }
+                }
+                "highrisk" -> {
+                    title = "High Risk Apps"
+                    val apps = viewModel.getHighRiskApps()
+                    items = apps.map { it.appName to it.packageName }
+                }
+                else -> {
+                    title = ""
+                    items = emptyList()
+                }
+            }
+
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(12.dp))
+                if (items.isEmpty()) {
+                    Text(
+                        "No apps found",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    items.forEach { (name, pkg) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                        data = Uri.parse("package:$pkg")
+                                    }
+                                    context.startActivity(intent)
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.Shield,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                Text(pkg, style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Icon(
+                                Icons.Outlined.Info,
+                                contentDescription = "App info",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
         }
     }
 }
@@ -395,10 +497,11 @@ private fun QuickStatCard(
     icon: ImageVector,
     label: String,
     value: String,
-    color: Color
+    color: Color,
+    onClick: () -> Unit = {}
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
@@ -837,7 +940,7 @@ private fun DangerousAppRow(profile: AppPrivacyProfile) {
 
 // ===== NETWORK TAB =====
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun NetworkTab(viewModel: PrivacyViewModel) {
     val topConsumers by viewModel.topDataConsumers.collectAsState()
@@ -846,6 +949,7 @@ private fun NetworkTab(viewModel: PrivacyViewModel) {
     val timeRange by viewModel.networkTimeRange.collectAsState()
     val hasUsageAccess by viewModel.hasUsageAccess.collectAsState()
     val context = LocalContext.current
+    var selectedNetworkApp by remember { mutableStateOf<NetworkUsageSummary?>(null) }
 
     LazyColumn(
         modifier = Modifier
@@ -1033,13 +1137,78 @@ private fun NetworkTab(viewModel: PrivacyViewModel) {
             }
         } else {
             items(topConsumers) { consumer ->
-                NetworkConsumerRow(consumer, topConsumers.firstOrNull()?.let {
-                    it.totalTxBytes + it.totalRxBytes
-                } ?: 1L)
+                NetworkConsumerRow(
+                    consumer = consumer,
+                    maxTotal = topConsumers.firstOrNull()?.let {
+                        it.totalTxBytes + it.totalRxBytes
+                    } ?: 1L,
+                    onClick = { selectedNetworkApp = consumer }
+                )
             }
         }
 
         item { Spacer(Modifier.height(16.dp)) }
+    }
+
+    // Network app detail bottom sheet
+    selectedNetworkApp?.let { app ->
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { selectedNetworkApp = null },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            val total = app.totalTxBytes + app.totalRxBytes
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    app.appName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    app.packageName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(16.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Total", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(NetworkMonitor.formatBytes(total),
+                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Uploaded", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("↑ ${NetworkMonitor.formatBytes(app.totalTxBytes)}",
+                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Downloaded", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("↓ ${NetworkMonitor.formatBytes(app.totalRxBytes)}",
+                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:${app.packageName}")
+                        }
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = BluePrimary)
+                ) {
+                    Text("Open App Settings")
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
     }
 }
 
@@ -1069,12 +1238,12 @@ private fun SuspiciousAppCard(app: SuspiciousNetworkApp) {
 }
 
 @Composable
-private fun NetworkConsumerRow(consumer: NetworkUsageSummary, maxTotal: Long) {
+private fun NetworkConsumerRow(consumer: NetworkUsageSummary, maxTotal: Long, onClick: () -> Unit = {}) {
     val total = consumer.totalTxBytes + consumer.totalRxBytes
     val progress = if (maxTotal > 0) total.toFloat() / maxTotal else 0f
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {

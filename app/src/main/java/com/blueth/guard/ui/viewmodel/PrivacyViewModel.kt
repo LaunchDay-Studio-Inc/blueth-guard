@@ -163,6 +163,7 @@ class PrivacyViewModel @Inject constructor(
 
                 // Load install events
                 launch(Dispatchers.IO) {
+                    installGuard.seedInstalledApps()
                     installGuard.getInstallHistory(30).collect { events ->
                         _installEvents.value = events
                     }
@@ -237,6 +238,24 @@ class PrivacyViewModel @Inject constructor(
 
     fun setTab(tab: PrivacyTab) {
         _privacyTab.value = tab
+    }
+
+    fun getAppsWithPermission(permission: String): List<AppInfo> {
+        return _permissionHeatmapApps.value.filter { app ->
+            app.permissions.contains(permission)
+        }
+    }
+
+    fun getSideloadedApps(): List<AppInfo> {
+        return _permissionHeatmapApps.value.filter { app ->
+            app.installSource != "com.android.vending" &&
+                app.installSource != "com.google.android.packageinstaller" &&
+                app.installSource != "Unknown"
+        }
+    }
+
+    fun getHighRiskApps(): List<AppPrivacyScore> {
+        return _appPrivacyScores.value.filter { it.overallScore < 30 }
     }
 
     private fun updateClipboardState() {

@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.2.0-beta] — 2026-03-29
+
+### New
+- **Quick Scan on Home** — inline quick scan button with mini-report showing virus/malware/tracker counts and risk breakdown
+- **WiFi Security card** on Home dashboard showing current network security status
+- **Anti-Theft shortcut** on Home screen for easy access to remote lock/wipe/locate
+- **All Files Access** and **Location** onboarding pages (6 pages total, up from 4)
+- **Install Guard seeding** — pre-populates install history with currently installed apps on first launch
+- **RAM Boost before/after** — Smart Boost result card now shows RAM available before and after boost
+- **Own cache clearing** — CacheCleaner can now clear Blueth Guard's own cache directly
+
+### Improved
+- **Deep Scan** now detects large files (>100MB), old unused files (>50MB, >6 months), and leftover app data from uninstalled apps
+- **Deep Scan** expanded to scan multiple roots including SD card, with tabbed results (Threats/Space Hogs/Old Files/App Leftovers)
+- **Deep Scan** requires MANAGE_EXTERNAL_STORAGE permission with guided dialog
+- **Privacy QuickStats** boxes are now clickable — tap to see matching app list in a bottom sheet with direct link to system app settings
+- **Network consumers** are now clickable — tap to see upload/download breakdown and open app settings
+- **Cache Clean All** now shows confirmation dialog explaining Android limitations before opening settings
+- **Processes tab** shows Usage Access permission prompt when not granted
+- **Adaptive icon** XMLs created for Android 8+ (API 26+) adaptive icon support
+
+### Fixed
+- Network data deduplication — old entries deleted before inserting new data to prevent accumulation
+- Home dashboard now shows RAM usage with Rocket icon instead of storage info in the optimizer card
+
 ## [1.1.0-beta] — 2026-03-28
 
 ### New

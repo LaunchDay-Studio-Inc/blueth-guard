@@ -11,6 +11,9 @@ interface InstallEventDao {
     @Insert
     suspend fun insert(event: InstallEvent)
 
+    @Insert
+    suspend fun insertAll(events: List<InstallEvent>)
+
     @Query("SELECT * FROM install_events ORDER BY timestamp DESC LIMIT :limit")
     fun getRecentEvents(limit: Int): Flow<List<InstallEvent>>
 
@@ -22,4 +25,7 @@ interface InstallEventDao {
 
     @Query("SELECT COUNT(*) FROM install_events WHERE timestamp >= :since AND installSource NOT IN ('com.android.vending', 'com.google.android.packageinstaller')")
     fun getSideloadCount(since: Long): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM install_events")
+    suspend fun getCount(): Int
 }

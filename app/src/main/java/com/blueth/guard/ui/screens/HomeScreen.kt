@@ -34,12 +34,15 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PhonelinkLock
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Rocket
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -88,6 +91,7 @@ import com.blueth.guard.ui.theme.RiskSafe
 import com.blueth.guard.ui.viewmodel.ActivityItem
 import com.blueth.guard.ui.viewmodel.DashboardState
 import com.blueth.guard.ui.viewmodel.HomeViewModel
+import com.blueth.guard.ui.viewmodel.QuickScanReport
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,6 +106,8 @@ fun HomeScreen(
 ) {
     val state by viewModel.dashboardState.collectAsState()
     val recentActivities by viewModel.recentActivities.collectAsState()
+    val quickScanRunning by viewModel.quickScanRunning.collectAsState()
+    val quickScanReport by viewModel.quickScanReport.collectAsState()
 
     PullToRefreshBox(
         isRefreshing = state.isLoading,
@@ -126,16 +132,29 @@ fun HomeScreen(
                 ScoreRingSection(state = state)
             }
 
+            // Quick Scan button
+            item {
+                QuickScanButton(
+                    isScanning = quickScanRunning,
+                    onScan = { viewModel.runQuickScan() }
+                )
+            }
+
+            // Quick Scan Report
+            quickScanReport?.let { report ->
+                item {
+                    QuickScanReportCard(report = report)
+                }
+            }
+
             // Quick Actions
             item {
                 if (state.isLoading) {
                     // Show nothing while loading
-                } else if (state.lastScanTime == null && !state.securityError) {
-                    FirstScanButton(onNavigateToSecurity = onNavigateToSecurity)
                 } else {
                     QuickActionsRow(
                         onNavigateToSecurity = onNavigateToSecurity,
-                        onNavigateToBattery = onNavigateToBattery,
+                        onNavigateToOptimizer = onNavigateToOptimizer,
                         onNavigateToPrivacy = onNavigateToPrivacy
                     )
                 }
@@ -158,6 +177,55 @@ fun HomeScreen(
                     state = state,
                     onNavigateToSettings = onNavigateToSettings
                 )
+            }
+
+            // WiFi Security Card
+            if (state.wifiConnected) {
+                item {
+                    WifiSecurityCard(state = state)
+                }
+            }
+
+            // Anti-Theft shortcut
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToAntiTheft() },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.PhonelinkLock,
+                            contentDescription = null,
+                            tint = BluePrimary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Anti-Theft Protection",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Remote lock, wipe & locate your device",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            Icons.Filled.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
 
             // Alerts Section
@@ -329,23 +397,106 @@ private fun ScoreRingSection(state: DashboardState) {
 }
 
 @Composable
-private fun FirstScanButton(onNavigateToSecurity: () -> Unit) {
+private fun QuickScanButton(
+    isScanning: Boolean,
+    onScan: () -> Unit
+) {
     Button(
-        onClick = onNavigateToSecurity,
+        onClick = onScan,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
+        enabled = !isScanning,
         colors = ButtonDefaults.buttonColors(containerColor = BluePrimary)
     ) {
-        Icon(Icons.Filled.Security, contentDescription = null)
-        Spacer(Modifier.width(8.dp))
-        Text(stringResource(R.string.home_start_scan), fontWeight = FontWeight.SemiBold)
+        if (isScanning) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                strokeWidth = 2.dp,
+                color = Color.White
+            )
+            Spacer(Modifier.width(8.dp))
+            Text("Scanning...", fontWeight = FontWeight.SemiBold)
+        } else {
+            Icon(Icons.Filled.Security, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.home_quick_scan), fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+private fun QuickScanReportCard(report: QuickScanReport) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (report.criticalCount > 0 || report.highRiskCount > 0)
+                RiskHigh.copy(alpha = 0.08f)
+            else RiskSafe.copy(alpha = 0.08f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Shield,
+                    contentDescription = null,
+                    tint = if (report.criticalCount > 0) RiskCritical
+                    else if (report.highRiskCount > 0) RiskHigh
+                    else RiskSafe,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Scan Report — ${report.overallBadge}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "${report.totalApps} apps scanned",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "0 viruses detected · 0 malware found · ${report.trackerCount} trackers found",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                RiskChip(count = report.safeCount + report.lowRiskCount, label = "Safe", color = RiskSafe)
+                RiskChip(count = report.mediumRiskCount, label = "Medium", color = RiskMedium)
+                RiskChip(count = report.highRiskCount + report.criticalCount, label = "High", color = RiskCritical)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RiskChip(count: Int, label: String, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            "$count",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color
+        )
     }
 }
 
 @Composable
 private fun QuickActionsRow(
     onNavigateToSecurity: () -> Unit,
-    onNavigateToBattery: () -> Unit,
+    onNavigateToOptimizer: () -> Unit,
     onNavigateToPrivacy: () -> Unit
 ) {
     Row(
@@ -353,21 +504,21 @@ private fun QuickActionsRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         QuickActionChip(
-            label = stringResource(R.string.home_quick_scan),
+            label = "Full Scan",
             icon = Icons.Filled.Security,
             onClick = onNavigateToSecurity,
             modifier = Modifier.weight(1f)
         )
         QuickActionChip(
-            label = stringResource(R.string.home_battery),
-            icon = Icons.Filled.Battery4Bar,
-            onClick = onNavigateToBattery,
+            label = "Boost RAM",
+            icon = Icons.Filled.Rocket,
+            onClick = onNavigateToOptimizer,
             modifier = Modifier.weight(1f)
         )
         QuickActionChip(
-            label = stringResource(R.string.home_privacy),
-            icon = Icons.Filled.Lock,
-            onClick = onNavigateToPrivacy,
+            label = "Clean Cache",
+            icon = Icons.Filled.Storage,
+            onClick = onNavigateToOptimizer,
             modifier = Modifier.weight(1f)
         )
     }
@@ -607,18 +758,21 @@ private fun BatteryCard(state: DashboardState, onClick: () -> Unit) {
 @Composable
 private fun StorageCard(state: DashboardState, onClick: () -> Unit) {
     val context = LocalContext.current
+
+    val ramUsedMb = state.ramUsed / (1024 * 1024)
+    val ramTotalMb = state.ramTotal / (1024 * 1024)
     val (value, subtitle) = when {
         state.storageError -> stringResource(R.string.home_error) to stringResource(R.string.home_unable_to_load)
-        state.totalStorage == 0L -> "—" to stringResource(R.string.home_not_analyzed)
+        state.ramTotal == 0L -> "—" to stringResource(R.string.home_not_analyzed)
         else -> {
-            val used = Formatter.formatShortFileSize(context, state.usedStorage)
-            val total = Formatter.formatShortFileSize(context, state.totalStorage)
-            "$used / $total" to ""
+            val used = Formatter.formatShortFileSize(context, state.ramUsed)
+            val total = Formatter.formatShortFileSize(context, state.ramTotal)
+            "RAM $used / $total" to "${state.killableProcessCount} killable processes"
         }
     }
 
-    val usedFraction = if (state.totalStorage > 0) {
-        state.usedStorage.toFloat() / state.totalStorage
+    val usedFraction = if (state.ramTotal > 0) {
+        state.ramUsed.toFloat() / state.ramTotal
     } else 0f
 
     val color = when {
@@ -629,13 +783,13 @@ private fun StorageCard(state: DashboardState, onClick: () -> Unit) {
     }
 
     ModuleCard(
-        icon = Icons.Filled.Storage,
+        icon = Icons.Filled.Rocket,
         title = stringResource(R.string.home_storage),
         value = value,
         subtitle = subtitle,
         indicatorColor = color,
         onClick = onClick,
-        bottomContent = if (state.totalStorage > 0 && !state.storageError) {
+        bottomContent = if (state.ramTotal > 0 && !state.storageError) {
             {
                 LinearProgressIndicator(
                     progress = { usedFraction },
@@ -700,6 +854,45 @@ private fun ProtectionBanner(state: DashboardState, onNavigateToSettings: () -> 
                 ) {
                     Text(stringResource(R.string.home_enable))
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WifiSecurityCard(state: DashboardState) {
+    val isSecure = state.wifiSecure
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSecure) RiskSafe.copy(alpha = 0.1f) else RiskHigh.copy(alpha = 0.1f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (isSecure) Icons.Filled.Wifi else Icons.Filled.WifiOff,
+                contentDescription = null,
+                tint = if (isSecure) RiskSafe else RiskHigh,
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = state.wifiSsid ?: "WiFi",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = if (isSecure) "Network is secure" else state.wifiWarnings.firstOrNull() ?: "Potential security issue",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

@@ -119,4 +119,30 @@ class CacheCleaner @Inject constructor(
             ClearResult.Failed(e.message ?: "Failed to open storage settings")
         }
     }
+
+    fun clearOwnCache(): ClearResult {
+        return try {
+            val cacheDir = context.cacheDir
+            val externalCacheDir = context.externalCacheDir
+            var cleared = 0L
+            cacheDir?.let { cleared += deleteDir(it) }
+            externalCacheDir?.let { cleared += deleteDir(it) }
+            ClearResult.Success
+        } catch (e: Exception) {
+            ClearResult.Failed(e.message ?: "Failed to clear own cache")
+        }
+    }
+
+    private fun deleteDir(dir: java.io.File): Long {
+        var freed = 0L
+        if (dir.isDirectory) {
+            dir.listFiles()?.forEach { file ->
+                freed += if (file.isDirectory) deleteDir(file) else {
+                    val size = file.length()
+                    if (file.delete()) size else 0L
+                }
+            }
+        }
+        return freed
+    }
 }

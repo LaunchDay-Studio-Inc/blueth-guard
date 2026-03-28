@@ -4,6 +4,7 @@ import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Environment
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,7 +24,9 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Shield
@@ -58,7 +61,7 @@ fun OnboardingScreen(
     onComplete: () -> Unit,
     viewModel: OnboardingViewModel = hiltViewModel()
 ) {
-    val pagerState = rememberPagerState(pageCount = { 4 })
+    val pagerState = rememberPagerState(pageCount = { 6 })
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -70,8 +73,10 @@ fun OnboardingScreen(
             when (page) {
                 0 -> WelcomePage()
                 1 -> PermissionsPage(context)
-                2 -> NotificationsPage(context)
-                3 -> ReadyPage(
+                2 -> AllFilesAccessPage(context)
+                3 -> LocationPage(context)
+                4 -> NotificationsPage(context)
+                5 -> ReadyPage(
                     onStart = {
                         viewModel.completeOnboarding()
                         onComplete()
@@ -81,7 +86,7 @@ fun OnboardingScreen(
         }
 
         // Skip button
-        if (pagerState.currentPage < 3) {
+        if (pagerState.currentPage < 5) {
             TextButton(
                 onClick = {
                     viewModel.completeOnboarding()
@@ -106,7 +111,7 @@ fun OnboardingScreen(
         ) {
             // Dot indicators
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(4) { index ->
+                repeat(6) { index ->
                     val color = if (index == pagerState.currentPage)
                         MaterialTheme.colorScheme.primary
                     else
@@ -123,8 +128,8 @@ fun OnboardingScreen(
                 }
             }
 
-            // Next button (pages 0-2)
-            if (pagerState.currentPage < 3) {
+            // Next button (pages 0-4)
+            if (pagerState.currentPage < 5) {
                 Button(
                     onClick = {
                         scope.launch {
@@ -257,6 +262,121 @@ private fun NotificationsPage(context: Context) {
                     ) {
                         Text(stringResource(R.string.onboarding_notifications_enable))
                     }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun AllFilesAccessPage(context: Context) {
+    var hasAllFiles by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                Environment.isExternalStorageManager()
+            else true
+        )
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            hasAllFiles = Environment.isExternalStorageManager()
+        }
+    }
+
+    OnboardingPageContent(
+        icon = Icons.Filled.Folder,
+        title = "All Files Access",
+        description = "Blueth Guard needs access to all files to perform deep scans for threats, duplicates, and large unused files.",
+        extra = {
+            Spacer(Modifier.height(24.dp))
+            if (hasAllFiles) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "All Files Access Granted",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    OutlinedButton(
+                        onClick = {
+                            launcher.launch(
+                                Intent(
+                                    Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
+                                )
+                            )
+                        }
+                    ) {
+                        Text("Grant All Files Access")
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun LocationPage(context: Context) {
+    var hasLocation by remember { mutableStateOf(false) }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasLocation = permissions.values.any { it }
+    }
+
+    LaunchedEffect(Unit) {
+        hasLocation = context.checkSelfPermission(
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+
+    OnboardingPageContent(
+        icon = Icons.Filled.LocationOn,
+        title = "Location Permission",
+        description = "Location access enables WiFi security scanning and helps detect network-based threats in your area.",
+        extra = {
+            Spacer(Modifier.height(24.dp))
+            if (hasLocation) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Location Permission Granted",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        launcher.launch(
+                            arrayOf(
+                                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                                android.Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        )
+                    }
+                ) {
+                    Text("Grant Location Permission")
                 }
             }
         }

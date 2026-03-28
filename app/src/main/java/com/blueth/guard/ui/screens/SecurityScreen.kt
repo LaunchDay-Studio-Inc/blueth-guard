@@ -1,5 +1,11 @@
 package com.blueth.guard.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.Settings
+import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
@@ -33,12 +39,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -48,11 +58,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -64,6 +78,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,8 +88,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.blueth.guard.R
 import com.blueth.guard.scanner.AppScanResult
 import com.blueth.guard.scanner.DeviceAdminAppInfo
+import com.blueth.guard.scanner.LargeFileInfo
+import com.blueth.guard.scanner.LeftoverAppData
 import com.blueth.guard.scanner.RiskLevel
 import com.blueth.guard.scanner.FileSeverity
+import com.blueth.guard.ui.theme.BluePrimary
 import com.blueth.guard.ui.theme.RiskCritical
 import com.blueth.guard.ui.theme.RiskHigh
 import com.blueth.guard.ui.theme.RiskLow
@@ -98,6 +116,13 @@ fun SecurityScreen(
     val deepScanProgress by viewModel.deepScanProgress.collectAsState()
     val deepScanResults by viewModel.deepScanResults.collectAsState()
     val deepScanStats by viewModel.deepScanStats.collectAsState()
+    val deepScanNeedsPermission by viewModel.deepScanNeedsPermission.collectAsState()
+    val deepScanLargeFiles by viewModel.deepScanLargeFiles.collectAsState()
+    val deepScanOldFiles by viewModel.deepScanOldFiles.collectAsState()
+    val deepScanLeftovers by viewModel.deepScanLeftovers.collectAsState()
+    val scanReport by viewModel.scanReport.collectAsState()
+
+    val context = LocalContext.current
 
     val isScanning = scanState == ScanState.SCANNING
     val scanComplete = scanState == ScanState.COMPLETE
@@ -113,6 +138,39 @@ fun SecurityScreen(
         AppDetailBottomSheet(
             result = app,
             onDismiss = { selectedApp = null }
+        )
+    }
+
+    // Deep scan permission dialog
+    if (deepScanNeedsPermission) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissPermissionDialog() },
+            title = { Text("All Files Access Required") },
+            text = {
+                Text("Deep Scan needs All Files Access to scan hidden files, downloads, and system storage.")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.dismissPermissionDialog()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        try {
+                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                data = Uri.parse("package:${context.packageName}")
+                            }
+                            context.startActivity(intent)
+                        } catch (_: Exception) {
+                            context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+                        }
+                    }
+                }) {
+                    Text("Grant Access")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissPermissionDialog() }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 
@@ -240,6 +298,13 @@ fun SecurityScreen(
                 }
             }
 
+            // Scan Report Card
+            scanReport?.let { report ->
+                item {
+                    ScanReportCard(report)
+                }
+            }
+
             // Device admin warning
             val nonSystemAdmins = deviceAdmins.filter { admin ->
                 !admin.description.contains("System")
@@ -322,6 +387,38 @@ fun SecurityScreen(
             }
         }
 
+        // Deep scan progress with current path and elapsed time
+        if (deepScanState == DeepScanState.SCANNING) {
+            item {
+                deepScanProgress?.let { prog ->
+                    Column {
+                        LinearProgressIndicator(
+                            progress = { if (prog.totalFiles > 0) prog.scannedFiles.toFloat() / prog.totalFiles else 0f },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp)),
+                            color = BluePrimary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "${prog.scannedFiles} / ${prog.totalFiles} files scanned · ${prog.elapsedMs / 1000}s elapsed",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            prog.currentPath.takeLast(60),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+
         // Deep scan results
         if (deepScanState == DeepScanState.COMPLETE) {
             deepScanStats?.let { stats ->
@@ -343,45 +440,76 @@ fun SecurityScreen(
                 }
             }
 
-            if (deepScanResults.isNotEmpty()) {
-                items(deepScanResults) { result ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            // Deep scan tabs
+            item {
+                var selectedDeepTab by remember { mutableIntStateOf(0) }
+                val deepTabs = listOf(
+                    "Threats (${deepScanResults.size})",
+                    "Space Hogs (${deepScanLargeFiles.size})",
+                    "Old Files (${deepScanOldFiles.size})",
+                    "App Leftovers (${deepScanLeftovers.size})"
+                )
+                ScrollableTabRow(
+                    selectedTabIndex = selectedDeepTab,
+                    edgePadding = 0.dp
+                ) {
+                    deepTabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedDeepTab == index,
+                            onClick = { selectedDeepTab = index },
+                            text = { Text(title, style = MaterialTheme.typography.labelSmall) }
                         )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val sevColor = when (result.severity) {
-                                FileSeverity.CRITICAL -> RiskCritical
-                                FileSeverity.HIGH -> RiskHigh
-                                FileSeverity.MEDIUM -> RiskMedium
-                                FileSeverity.LOW -> RiskLow
-                                else -> RiskSafe
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                when (selectedDeepTab) {
+                    0 -> {
+                        // Threats
+                        if (deepScanResults.isEmpty()) {
+                            Text("No threats found", style = MaterialTheme.typography.bodyMedium,
+                                color = RiskSafe)
+                        } else {
+                            deepScanResults.forEach { result ->
+                                DeepScanThreatCard(result)
+                                Spacer(Modifier.height(4.dp))
                             }
-                            Icon(
-                                Icons.Filled.Warning,
-                                contentDescription = null,
-                                tint = sevColor,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    result.fileName,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    result.description,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                        }
+                    }
+                    1 -> {
+                        // Space Hogs (> 100MB)
+                        if (deepScanLargeFiles.isEmpty()) {
+                            Text("No files over 100 MB found", style = MaterialTheme.typography.bodyMedium,
+                                color = RiskSafe)
+                        } else {
+                            deepScanLargeFiles.take(20).forEach { file ->
+                                LargeFileCard(file)
+                                Spacer(Modifier.height(4.dp))
+                            }
+                        }
+                    }
+                    2 -> {
+                        // Old Files
+                        if (deepScanOldFiles.isEmpty()) {
+                            Text("No old large files found", style = MaterialTheme.typography.bodyMedium,
+                                color = RiskSafe)
+                        } else {
+                            deepScanOldFiles.take(20).forEach { file ->
+                                LargeFileCard(file)
+                                Spacer(Modifier.height(4.dp))
+                            }
+                        }
+                    }
+                    3 -> {
+                        // App Leftovers
+                        if (deepScanLeftovers.isEmpty()) {
+                            Text("No leftover app data found", style = MaterialTheme.typography.bodyMedium,
+                                color = RiskSafe)
+                        } else {
+                            deepScanLeftovers.forEach { leftover ->
+                                LeftoverCard(leftover)
+                                Spacer(Modifier.height(4.dp))
                             }
                         }
                     }
@@ -762,6 +890,179 @@ private fun ScanResultCard(result: AppScanResult, onClick: () -> Unit = {}, onLo
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ScanReportCard(report: SecurityViewModel.ScanReport) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = when (report.overallBadge) {
+                "Excellent" -> RiskSafe.copy(alpha = 0.08f)
+                "Good" -> RiskLow.copy(alpha = 0.08f)
+                "Fair" -> RiskMedium.copy(alpha = 0.08f)
+                else -> RiskCritical.copy(alpha = 0.08f)
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Shield,
+                    contentDescription = null,
+                    tint = when (report.overallBadge) {
+                        "Excellent" -> RiskSafe
+                        "Good" -> RiskLow
+                        "Fair" -> RiskMedium
+                        else -> RiskCritical
+                    },
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Column {
+                    Text(
+                        "Scan Report — ${report.overallBadge}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "${report.totalApps} apps scanned",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "0 viruses detected · ${report.malwareCount} malware found · ${report.trackerCount} trackers found",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                ReportChip(report.safeCount, "Safe", RiskSafe)
+                ReportChip(report.lowRiskCount, "Low", RiskLow)
+                ReportChip(report.mediumRiskCount, "Medium", RiskMedium)
+                ReportChip(report.highRiskCount + report.criticalCount, "High/Critical", RiskCritical)
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                java.text.SimpleDateFormat("MMM d, HH:mm", java.util.Locale.getDefault())
+                    .format(java.util.Date(report.timestamp)),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReportChip(count: Int, label: String, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            "$count",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Text(label, style = MaterialTheme.typography.labelSmall, color = color)
+    }
+}
+
+@Composable
+private fun DeepScanThreatCard(result: com.blueth.guard.scanner.FileScanResult) {
+    val sevColor = when (result.severity) {
+        FileSeverity.CRITICAL -> RiskCritical
+        FileSeverity.HIGH -> RiskHigh
+        FileSeverity.MEDIUM -> RiskMedium
+        FileSeverity.LOW -> RiskLow
+        else -> RiskSafe
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Warning, contentDescription = null, tint = sevColor,
+                modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(result.fileName, style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(result.description, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LargeFileCard(file: LargeFileInfo) {
+    val context = LocalContext.current
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Storage, contentDescription = null,
+                tint = RiskMedium, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(file.fileName, style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    "${Formatter.formatShortFileSize(context, file.fileSize)} · ${
+                        java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault())
+                            .format(java.util.Date(file.lastModified))
+                    }",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LeftoverCard(leftover: LeftoverAppData) {
+    val context = LocalContext.current
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.FolderOpen, contentDescription = null,
+                tint = RiskMedium, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(leftover.packageName, style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    Formatter.formatShortFileSize(context, leftover.folderSize),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                Icons.Filled.DeleteForever,
+                contentDescription = "Delete",
+                tint = RiskHigh,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }

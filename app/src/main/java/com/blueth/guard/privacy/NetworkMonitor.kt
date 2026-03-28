@@ -93,6 +93,7 @@ class NetworkMonitor @Inject constructor(
         }
 
         if (entries.isNotEmpty()) {
+            dao.deleteOlderThan(startTime)
             dao.insertAll(entries)
         }
     }

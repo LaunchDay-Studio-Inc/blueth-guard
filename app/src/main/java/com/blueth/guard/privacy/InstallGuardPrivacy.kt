@@ -123,6 +123,34 @@ class InstallGuard @Inject constructor(
         return dao.getRecentEvents(limit)
     }
 
+    suspend fun seedInstalledApps() = withContext(Dispatchers.IO) {
+        // Only seed if the table is empty to avoid duplicates
+        if (dao.getCount() > 0) return@withContext
+
+        val pm = context.packageManager
+        val packages = pm.getInstalledPackages(0)
+        val now = System.currentTimeMillis()
+        val events = packages.mapNotNull { pkgInfo ->
+            val appName = try {
+                pkgInfo.applicationInfo?.let { pm.getApplicationLabel(it).toString() }
+                    ?: pkgInfo.packageName
+            } catch (_: Exception) { pkgInfo.packageName }
+            val installSource = getInstallSource(pkgInfo.packageName)
+            InstallEvent(
+                packageName = pkgInfo.packageName,
+                appName = appName,
+                action = InstallAction.INSTALLED,
+                timestamp = pkgInfo.firstInstallTime,
+                riskScore = null,
+                installSource = installSource,
+                scanSummary = null
+            )
+        }
+        if (events.isNotEmpty()) {
+            dao.insertAll(events)
+        }
+    }
+
     fun getSideloadedApps(): Flow<List<InstallEvent>> {
         val since = System.currentTimeMillis() - 365L * 24 * 3600_000
         return dao.getRecentEvents(1000)

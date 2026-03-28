@@ -13,9 +13,12 @@ import com.blueth.guard.data.local.PermissionEventDao
 import com.blueth.guard.data.local.ScanHistoryDao
 import com.blueth.guard.data.prefs.UserPreferences
 import com.blueth.guard.data.repository.AppRepository
+import com.blueth.guard.optimizer.ProcessManager
 import com.blueth.guard.optimizer.StorageAnalyzer
 import com.blueth.guard.privacy.PrivacyScorer
+import com.blueth.guard.protection.WifiSecurityChecker
 import com.blueth.guard.scanner.SecurityScanner
+import com.blueth.guard.scanner.RiskLevel
 import com.blueth.guard.widget.WidgetDataSync
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,6 +59,11 @@ data class DashboardState(
     val usedStorage: Long = 0L,
     val cacheSize: Long = 0L,
 
+    // RAM summary
+    val ramTotal: Long = 0L,
+    val ramUsed: Long = 0L,
+    val killableProcessCount: Int = 0,
+
     // Quick status flags
     val hasUnresolvedThreats: Boolean = false,
     val hasScheduledScans: Boolean = false,
@@ -65,7 +73,13 @@ data class DashboardState(
     val securityError: Boolean = false,
     val privacyError: Boolean = false,
     val batteryError: Boolean = false,
-    val storageError: Boolean = false
+    val storageError: Boolean = false,
+
+    // WiFi security
+    val wifiConnected: Boolean = false,
+    val wifiSsid: String? = null,
+    val wifiSecure: Boolean = true,
+    val wifiWarnings: List<String> = emptyList()
 )
 
 data class ActivityItem(
@@ -75,6 +89,20 @@ data class ActivityItem(
     val timestamp: Long
 )
 
+data class QuickScanReport(
+    val totalApps: Int = 0,
+    val virusCount: Int = 0,
+    val malwareCount: Int = 0,
+    val trackerCount: Int = 0,
+    val safeCount: Int = 0,
+    val lowRiskCount: Int = 0,
+    val mediumRiskCount: Int = 0,
+    val highRiskCount: Int = 0,
+    val criticalCount: Int = 0,
+    val overallBadge: String = "Excellent",
+    val timestamp: Long = System.currentTimeMillis()
+)
+
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val securityScanner: SecurityScanner,
@@ -82,6 +110,8 @@ class HomeViewModel @Inject constructor(
     private val drainRanker: DrainRanker,
     private val privacyScorer: PrivacyScorer,
     private val storageAnalyzer: StorageAnalyzer,
+    private val processManager: ProcessManager,
+    private val wifiSecurityChecker: WifiSecurityChecker,
     private val appRepository: AppRepository,
     private val userPreferences: UserPreferences,
     private val widgetDataSync: WidgetDataSync,
@@ -96,6 +126,12 @@ class HomeViewModel @Inject constructor(
 
     private val _recentActivities = MutableStateFlow<List<ActivityItem>>(emptyList())
     val recentActivities: StateFlow<List<ActivityItem>> = _recentActivities.asStateFlow()
+
+    private val _quickScanRunning = MutableStateFlow(false)
+    val quickScanRunning: StateFlow<Boolean> = _quickScanRunning.asStateFlow()
+
+    private val _quickScanReport = MutableStateFlow<QuickScanReport?>(null)
+    val quickScanReport: StateFlow<QuickScanReport?> = _quickScanReport.asStateFlow()
 
     init {
         loadDashboard()
@@ -197,6 +233,30 @@ class HomeViewModel @Inject constructor(
                 storageError = true
             }
 
+            // RAM
+            var ramTotal = 0L
+            var ramUsed = 0L
+            var killableProcessCount = 0
+            try {
+                val (total, available) = processManager.getRamInfo()
+                ramTotal = total
+                ramUsed = total - available
+                killableProcessCount = processManager.getSmartKillList().size
+            } catch (_: Exception) { }
+
+            // WiFi Security
+            var wifiConnected = false
+            var wifiSsid: String? = null
+            var wifiSecure = true
+            var wifiWarnings = emptyList<String>()
+            try {
+                val wifiResult = wifiSecurityChecker.check()
+                wifiConnected = wifiResult.isConnected
+                wifiSsid = wifiResult.ssid
+                wifiWarnings = wifiResult.warnings
+                wifiSecure = wifiWarnings.isEmpty()
+            } catch (_: Exception) { }
+
             // Preferences
             val protectionEnabled = try {
                 userPreferences.realTimeProtection.first()
@@ -252,13 +312,20 @@ class HomeViewModel @Inject constructor(
                 totalStorage = totalStorage,
                 usedStorage = usedStorage,
                 cacheSize = cacheSize,
+                ramTotal = ramTotal,
+                ramUsed = ramUsed,
+                killableProcessCount = killableProcessCount,
                 hasUnresolvedThreats = riskyAppsCount > 0,
                 hasScheduledScans = hasScheduledScans,
                 installScanEnabled = installScanEnabled,
                 securityError = securityError,
                 privacyError = privacyError,
                 batteryError = batteryError,
-                storageError = storageError
+                storageError = storageError,
+                wifiConnected = wifiConnected,
+                wifiSsid = wifiSsid,
+                wifiSecure = wifiSecure,
+                wifiWarnings = wifiWarnings
             )
 
             // Sync widget data
@@ -322,6 +389,49 @@ class HomeViewModel @Inject constructor(
             } catch (_: Exception) {}
 
             _recentActivities.value = activities.sortedByDescending { it.timestamp }.take(15)
+        }
+    }
+
+    fun runQuickScan() {
+        if (_quickScanRunning.value) return
+        viewModelScope.launch {
+            _quickScanRunning.value = true
+            _quickScanReport.value = null
+            try {
+                securityScanner.scanAll().collect { /* consume progress */ }
+                val results = securityScanner.getLastScanResults()
+                val safeCount = results.count { it.threatAssessment.riskLevel == RiskLevel.SAFE }
+                val lowCount = results.count { it.threatAssessment.riskLevel == RiskLevel.LOW }
+                val medCount = results.count { it.threatAssessment.riskLevel == RiskLevel.MEDIUM }
+                val highCount = results.count { it.threatAssessment.riskLevel == RiskLevel.HIGH }
+                val critCount = results.count { it.threatAssessment.riskLevel == RiskLevel.CRITICAL }
+                val trackerCount = results.sumOf { it.detectedTrackers.size }
+                val badge = when {
+                    critCount > 0 -> "At Risk"
+                    highCount > 0 -> "Fair"
+                    medCount > 0 -> "Good"
+                    else -> "Excellent"
+                }
+                _quickScanReport.value = QuickScanReport(
+                    totalApps = results.size,
+                    virusCount = 0,
+                    malwareCount = critCount,
+                    trackerCount = trackerCount,
+                    safeCount = safeCount,
+                    lowRiskCount = lowCount,
+                    mediumRiskCount = medCount,
+                    highRiskCount = highCount,
+                    criticalCount = critCount,
+                    overallBadge = badge,
+                    timestamp = System.currentTimeMillis()
+                )
+                // Refresh dashboard after scan
+                loadDashboard()
+            } catch (_: Exception) {
+                _quickScanReport.value = null
+            } finally {
+                _quickScanRunning.value = false
+            }
         }
     }
 }

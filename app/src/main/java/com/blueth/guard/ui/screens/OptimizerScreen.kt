@@ -496,8 +496,35 @@ private fun CacheTab(viewModel: OptimizerViewModel, context: Context) {
     val appCaches by viewModel.appCaches.collectAsState()
     val totalCacheSize by viewModel.totalCacheSize.collectAsState()
     var isRefreshing by remember { mutableStateOf(false) }
+    var showCleanDialog by remember { mutableStateOf(false) }
 
     val filteredCaches = appCaches.filter { it.cacheSize > 1_048_576 } // > 1MB
+
+    if (showCleanDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showCleanDialog = false },
+            title = { Text("Clear All Caches") },
+            text = {
+                Text("Android doesn't allow apps to clear other apps' caches directly. " +
+                    "This will open Storage Settings where you can clear caches manually.\n\n" +
+                    "Blueth Guard's own cache will be cleared automatically.")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showCleanDialog = false
+                    viewModel.clearOwnCache()
+                    viewModel.clearAllCaches()
+                }) {
+                    Text("Open Settings")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showCleanDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -539,7 +566,7 @@ private fun CacheTab(viewModel: OptimizerViewModel, context: Context) {
                             color = if (totalCacheSize > 500_000_000) RiskMedium else MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.height(8.dp))
-                        Button(onClick = { viewModel.clearAllCaches() }) {
+                        Button(onClick = { showCleanDialog = true }) {
                             Icon(Icons.Filled.CleaningServices, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.optimizer_clean_all))
@@ -638,10 +665,25 @@ private fun ProcessesTab(viewModel: OptimizerViewModel, context: Context) {
     val ramTotal by viewModel.ramTotal.collectAsState()
     val ramAvailable by viewModel.ramAvailable.collectAsState()
     val lastKillResult by viewModel.lastKillResult.collectAsState()
+    val ramBeforeBoost by viewModel.ramBeforeBoost.collectAsState()
+    val ramAfterBoost by viewModel.ramAfterBoost.collectAsState()
     var isRefreshing by remember { mutableStateOf(false) }
 
     val usedRam = ramTotal - ramAvailable
     val ramPercent = if (ramTotal > 0) usedRam.toFloat() / ramTotal else 0f
+
+    // Check usage access
+    val hasUsageAccess = remember {
+        try {
+            val appOps = context.getSystemService(android.content.Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+            val mode = appOps.unsafeCheckOpNoThrow(
+                android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(),
+                context.packageName
+            )
+            mode == android.app.AppOpsManager.MODE_ALLOWED
+        } catch (_: Exception) { false }
+    }
 
     val essentialProcesses = runningProcesses.filter {
         it.processCategory == ProcessCategory.ESSENTIAL_SYSTEM || it.processCategory == ProcessCategory.USER_ACTIVE
@@ -709,6 +751,43 @@ private fun ProcessesTab(viewModel: OptimizerViewModel, context: Context) {
                 }
             }
 
+            // Usage access permission check
+            if (!hasUsageAccess) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = RiskMedium.copy(alpha = 0.15f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.Warning, contentDescription = null, tint = RiskMedium, modifier = Modifier.size(24.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "Usage Access Required",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "Grant Usage Access to see all running processes and accurate memory data.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Button(
+                                onClick = {
+                                    context.startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = RiskMedium)
+                            ) {
+                                Text("Grant Permission")
+                            }
+                        }
+                    }
+                }
+            }
+
             // Smart Boost button
             item {
                 Button(
@@ -734,28 +813,60 @@ private fun ProcessesTab(viewModel: OptimizerViewModel, context: Context) {
                                 containerColor = RiskSafe.copy(alpha = 0.15f)
                             )
                         ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Filled.Check, contentDescription = null, tint = RiskSafe)
-                                Spacer(Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        stringResource(R.string.optimizer_freed_memory,
-                                            Formatter.formatFileSize(context, result.estimatedMemoryFreedKb * 1024)),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = RiskSafe
-                                    )
-                                    Text(
-                                        stringResource(R.string.optimizer_processes_killed, result.processesKilled.toString()),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Check, contentDescription = null, tint = RiskSafe)
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            stringResource(R.string.optimizer_freed_memory,
+                                                Formatter.formatFileSize(context, result.estimatedMemoryFreedKb * 1024)),
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = RiskSafe
+                                        )
+                                        Text(
+                                            stringResource(R.string.optimizer_processes_killed, result.processesKilled.toString()),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    IconButton(onClick = { viewModel.clearKillResult() }) {
+                                        Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.optimizer_dismiss))
+                                    }
                                 }
-                                IconButton(onClick = { viewModel.clearKillResult() }) {
-                                    Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.optimizer_dismiss))
+                                if (ramBeforeBoost > 0 && ramAfterBoost > 0) {
+                                    Spacer(Modifier.height(8.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("Before", style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(
+                                                Formatter.formatFileSize(context, ramBeforeBoost),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text("free", style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        Text("→", style = MaterialTheme.typography.titleLarge,
+                                            color = RiskSafe, modifier = Modifier.align(Alignment.CenterVertically))
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("After", style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(
+                                                Formatter.formatFileSize(context, ramAfterBoost),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = RiskSafe
+                                            )
+                                            Text("free", style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
                                 }
                             }
                         }

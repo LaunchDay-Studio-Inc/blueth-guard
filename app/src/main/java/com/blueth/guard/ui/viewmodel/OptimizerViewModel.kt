@@ -83,6 +83,12 @@ class OptimizerViewModel @Inject constructor(
     private val _lastKillResult = MutableStateFlow<KillResult?>(null)
     val lastKillResult: StateFlow<KillResult?> = _lastKillResult.asStateFlow()
 
+    private val _ramBeforeBoost = MutableStateFlow(0L)
+    val ramBeforeBoost: StateFlow<Long> = _ramBeforeBoost.asStateFlow()
+
+    private val _ramAfterBoost = MutableStateFlow(0L)
+    val ramAfterBoost: StateFlow<Long> = _ramAfterBoost.asStateFlow()
+
     private val _ramTotal = MutableStateFlow(0L)
     val ramTotal: StateFlow<Long> = _ramTotal.asStateFlow()
 
@@ -157,6 +163,13 @@ class OptimizerViewModel @Inject constructor(
         _snackbarMessage.value = message
     }
 
+    fun clearOwnCache() {
+        val result = cacheCleaner.clearOwnCache()
+        if (result is ClearResult.Success) {
+            viewModelScope.launch { refreshCaches() }
+        }
+    }
+
     fun killProcess(packageName: String) {
         val result = processManager.killProcess(packageName)
         _snackbarMessage.value = result.message
@@ -167,10 +180,17 @@ class OptimizerViewModel @Inject constructor(
 
     fun killAllKillable() {
         viewModelScope.launch {
+            val (_, availBefore) = processManager.getRamInfo()
+            _ramBeforeBoost.value = availBefore
+
             val result = processManager.killAllKillable()
             _lastKillResult.value = result
             _snackbarMessage.value = result.message
+
             refreshProcesses()
+
+            val (_, availAfter) = processManager.getRamInfo()
+            _ramAfterBoost.value = availAfter
         }
     }
 

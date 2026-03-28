@@ -1,6 +1,7 @@
 package com.blueth.guard.scanner
 
 import android.app.Application
+import android.content.pm.PackageManager
 import android.os.Environment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -28,10 +29,24 @@ data class FileScanResult(
     val description: String
 )
 
+data class LargeFileInfo(
+    val filePath: String,
+    val fileName: String,
+    val fileSize: Long,
+    val lastModified: Long
+)
+
+data class LeftoverAppData(
+    val packageName: String,
+    val folderPath: String,
+    val folderSize: Long
+)
+
 data class DeepScanProgress(
     val scannedFiles: Int,
     val totalFiles: Int,
-    val currentPath: String
+    val currentPath: String,
+    val elapsedMs: Long = 0L
 )
 
 data class DeepScanStats(
@@ -39,6 +54,14 @@ data class DeepScanStats(
     val threatsFound: Int,
     val corruptedFound: Int,
     val scanDurationMs: Long
+)
+
+data class DeepScanResult(
+    val threats: List<FileScanResult>,
+    val stats: DeepScanStats,
+    val largeFiles: List<LargeFileInfo>,
+    val oldFiles: List<LargeFileInfo>,
+    val leftovers: List<LeftoverAppData>
 )
 
 @Singleton
@@ -51,7 +74,10 @@ class DeepFileScanner @Inject constructor(
         private val SUSPICIOUS_SCRIPT_EXTS = setOf(".sh", ".bat", ".cmd", ".ps1", ".vbs")
         private val KNOWN_APP_DIRS = setOf("/data/app", "/system/app", "/system/priv-app", "/vendor/app")
         private const val SINGLE_FILE_TIMEOUT_MS = 2000L
-        private const val TOTAL_SCAN_TIMEOUT_MS = 300_000L // 5 minutes
+        private const val TOTAL_SCAN_TIMEOUT_MS = 600_000L // 10 minutes
+        private const val LARGE_FILE_THRESHOLD = 100L * 1024 * 1024 // 100MB
+        private const val OLD_FILE_THRESHOLD = 50L * 1024 * 1024 // 50MB
+        private const val OLD_FILE_AGE_MS = 180L * 24 * 3600_000 // 6 months
 
         // File magic bytes
         private val JPEG_MAGIC = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte())
@@ -62,31 +88,47 @@ class DeepFileScanner @Inject constructor(
 
     suspend fun scan(
         onProgress: (DeepScanProgress) -> Unit = {}
-    ): Pair<List<FileScanResult>, DeepScanStats> = withContext(Dispatchers.IO) {
+    ): DeepScanResult = withContext(Dispatchers.IO) {
         val startTime = System.currentTimeMillis()
         val results = mutableListOf<FileScanResult>()
+        val largeFiles = mutableListOf<LargeFileInfo>()
+        val oldFiles = mutableListOf<LargeFileInfo>()
         val hashDb = FileHashDatabase.hashes
 
-        val scanRoot = Environment.getExternalStorageDirectory()
+        // Build scan roots
+        val scanRoots = mutableListOf<File>()
+        scanRoots.add(Environment.getExternalStorageDirectory())
+        // Try app-specific data dirs
+        app.filesDir.parentFile?.let { scanRoots.add(it) }
+        // Try SD card
+        val storageDir = File("/storage")
+        if (storageDir.exists() && storageDir.canRead()) {
+            storageDir.listFiles()?.filter { it.isDirectory && it.name != "emulated" && it.name != "self" }
+                ?.forEach { scanRoots.add(it) }
+        }
+
         val allFiles = mutableListOf<File>()
 
-        // Collect files first
-        try {
-            scanRoot.walkTopDown()
-                .maxDepth(10)
-                .onEnter { dir ->
-                    val path = dir.absolutePath
-                    !SKIP_DIRS.any { path.startsWith(it) }
-                }
-                .filter { it.isFile }
-                .take(50_000) // Safety limit
-                .forEach { allFiles.add(it) }
-        } catch (_: Exception) { }
+        // Collect files from all roots
+        for (root in scanRoots) {
+            try {
+                root.walkTopDown()
+                    .maxDepth(20)
+                    .onEnter { dir ->
+                        val path = dir.absolutePath
+                        !SKIP_DIRS.any { path.startsWith(it) }
+                    }
+                    .filter { it.isFile }
+                    .take(500_000) // Increased safety limit
+                    .forEach { allFiles.add(it) }
+            } catch (_: Exception) { }
+        }
 
         val totalFiles = allFiles.size
         var scannedCount = 0
         var threatsFound = 0
         var corruptedFound = 0
+        val now = System.currentTimeMillis()
 
         val scanResult = withTimeoutOrNull(TOTAL_SCAN_TIMEOUT_MS) {
             for (file in allFiles) {
@@ -102,12 +144,31 @@ class DeepFileScanner @Inject constructor(
                     }
                 }
 
+                // Large file detection (> 100MB)
+                val fileSize = file.length()
+                if (fileSize > LARGE_FILE_THRESHOLD) {
+                    largeFiles.add(LargeFileInfo(file.absolutePath, file.name, fileSize, file.lastModified()))
+                }
+
+                // Old file detection (> 50MB and not modified in 6 months)
+                if (fileSize > OLD_FILE_THRESHOLD && (now - file.lastModified()) > OLD_FILE_AGE_MS) {
+                    oldFiles.add(LargeFileInfo(file.absolutePath, file.name, fileSize, file.lastModified()))
+                }
+
                 scannedCount++
                 if (scannedCount % 100 == 0 || scannedCount == totalFiles) {
-                    onProgress(DeepScanProgress(scannedCount, totalFiles, file.absolutePath))
+                    onProgress(DeepScanProgress(
+                        scannedFiles = scannedCount,
+                        totalFiles = totalFiles,
+                        currentPath = file.absolutePath,
+                        elapsedMs = System.currentTimeMillis() - startTime
+                    ))
                 }
             }
         }
+
+        // Leftover app data detection
+        val leftovers = detectLeftoverAppData()
 
         val stats = DeepScanStats(
             filesScanned = scannedCount,
@@ -116,7 +177,34 @@ class DeepFileScanner @Inject constructor(
             scanDurationMs = System.currentTimeMillis() - startTime
         )
 
-        Pair(results, stats)
+        DeepScanResult(
+            threats = results,
+            stats = stats,
+            largeFiles = largeFiles.sortedByDescending { it.fileSize },
+            oldFiles = oldFiles.sortedByDescending { it.fileSize },
+            leftovers = leftovers
+        )
+    }
+
+    private fun detectLeftoverAppData(): List<LeftoverAppData> {
+        val leftovers = mutableListOf<LeftoverAppData>()
+        val pm = app.packageManager
+        val installedPackages = pm.getInstalledPackages(0).map { it.packageName }.toSet()
+
+        // Check /Android/data/ for folders from uninstalled apps
+        val androidDataDir = File(Environment.getExternalStorageDirectory(), "Android/data")
+        if (androidDataDir.exists() && androidDataDir.canRead()) {
+            androidDataDir.listFiles()?.forEach { dir ->
+                if (dir.isDirectory && dir.name !in installedPackages) {
+                    val size = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+                    if (size > 0) {
+                        leftovers.add(LeftoverAppData(dir.name, dir.absolutePath, size))
+                    }
+                }
+            }
+        }
+
+        return leftovers.sortedByDescending { it.folderSize }
     }
 
     private fun scanSingleFile(file: File, hashDb: Set<String>): FileScanResult {
