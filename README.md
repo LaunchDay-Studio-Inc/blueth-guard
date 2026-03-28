@@ -1,27 +1,41 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Blueth Guard" width="600" />
+  <img src="app/src/main/ic_launcher-playstore.png" alt="Blueth Guard" width="160" />
 </p>
 
 <h1 align="center">Blueth Guard</h1>
+
 <p align="center">
   <strong>Free. Open-source. No ads. No tracking. No BS.</strong><br>
   The security app your phone actually deserves.
 </p>
 
+<br>
+
 <p align="center">
-  <a href="https://blueth.online/products/guard"><img src="https://img.shields.io/badge/⬇_Download_APK-blueth.online-00C853?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" /></a>
+  <a href="https://github.com/LaunchDay-Studio-Inc/blueth-guard/releases/latest"><img src="https://img.shields.io/github/v/release/LaunchDay-Studio-Inc/blueth-guard?include_prereleases&style=for-the-badge&logo=github&logoColor=white&label=Version&color=0A1628" alt="Version" /></a>
+  &nbsp;
+  <a href="https://github.com/LaunchDay-Studio-Inc/blueth-guard/releases/latest"><img src="https://img.shields.io/badge/⬇_Download_APK-Latest_Release-00C853?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" /></a>
   &nbsp;
   <a href="https://play.google.com/store/apps/details?id=com.blueth.guard"><img src="https://img.shields.io/badge/Google_Play-Internal_Testing-414141?style=for-the-badge&logo=google-play&logoColor=white" alt="Play Store" /></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/LaunchDay-Studio-Inc/blueth-guard/releases/latest"><img src="https://img.shields.io/github/v/release/LaunchDay-Studio-Inc/blueth-guard?style=flat-square&label=Version" alt="Version" /></a>
+  <a href="https://github.com/LaunchDay-Studio-Inc/blueth-guard/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/LaunchDay-Studio-Inc/blueth-guard/build.yml?style=flat-square&label=Build&logo=githubactions&logoColor=white" alt="Build" /></a>
+  &nbsp;
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="License" /></a>
+  &nbsp;
   <a href="https://discord.gg/bJDGXc4DvW"><img src="https://img.shields.io/badge/Discord-Community-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
-  <a href="https://github.com/LaunchDay-Studio-Inc/blueth-guard/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/LaunchDay-Studio-Inc/blueth-guard/build.yml?style=flat-square&label=Build" alt="Build" /></a>
+  &nbsp;
+  <img src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android 8.0+" />
+  &nbsp;
+  <img src="https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
 </p>
 
+<br>
+
 ---
+
+<br>
 
 ## Why Blueth Guard?
 
@@ -41,24 +55,44 @@ Everything runs locally on your device. Nothing is sent anywhere. Ever. Check th
 
 ## Download
 
+<table>
+<tr>
+<td width="50%" align="center">
+
 ### Direct APK (Recommended)
+
 Download the latest APK directly — no Play Store account needed:
 
-**[⬇️ Download from blueth.online](https://blueth.online/products/guard)**
+[![Download APK](https://img.shields.io/badge/⬇_Download_APK-Latest_Release-00C853?style=for-the-badge&logo=android&logoColor=white)](https://github.com/LaunchDay-Studio-Inc/blueth-guard/releases/latest)
 
-Or grab it from [GitHub Releases](https://github.com/LaunchDay-Studio-Inc/blueth-guard/releases/latest).
+Or from **[blueth.online](https://blueth.online/products/guard)**
 
-1. Download `blueth-guard-x.x.x.apk`
+</td>
+<td width="50%" align="center">
+
+### Google Play (Internal Testing)
+
+Currently in internal testing. Join the test track:
+
+[![Google Play](https://img.shields.io/badge/Google_Play-Join_Testing-414141?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.blueth.guard)
+
+Same code, same features, same privacy.
+
+</td>
+</tr>
+</table>
+
+<details>
+<summary><strong>Installation Instructions</strong></summary>
+
+<br>
+
+1. Download `blueth-guard-x.x.x.apk` from [GitHub Releases](https://github.com/LaunchDay-Studio-Inc/blueth-guard/releases/latest)
 2. Tap to install (allow "Unknown sources" if prompted)
 3. Open and follow the setup — takes 30 seconds
 4. That's it. No account. No sign-up. No email.
 
-### Google Play Store (Internal Testing)
-Currently in internal testing. Join the test track:
-
-**[🧪 Join Internal Testing on Google Play](https://play.google.com/store/apps/details?id=com.blueth.guard)**
-
-The Play Store version is identical to the APK — same code, same features, same privacy.
+</details>
 
 ### Requirements
 - Android 8.0+ (API 26)
@@ -68,7 +102,11 @@ The Play Store version is identical to the APK — same code, same features, sam
 
 > **Beta** — Core features are stable. Rough edges exist. [Report bugs here.](https://github.com/LaunchDay-Studio-Inc/blueth-guard/issues)
 
+<br>
+
 ---
+
+<br>
 
 ## What It Actually Does
 
@@ -146,29 +184,37 @@ Always watching. Never draining.
 
 ---
 
+<br>
+
 ## Privacy Promise
 
-```
-We collect:        Nothing.
-We send:           Nothing.
-We track:          Nothing.
-We sell:           Nothing.
-Ads:               None.
-Analytics:         None.
-Firebase:          None.
-Third-party SDKs:  None that collect data.
-```
+> **Everything runs on your device. Nothing is sent anywhere. Ever.**
+
+| | |
+|:--|:--|
+| **We collect** | Nothing |
+| **We send** | Nothing |
+| **We track** | Nothing |
+| **We sell** | Nothing |
+| **Ads** | None |
+| **Analytics** | None |
+| **Firebase** | None |
+| **Third-party SDKs** | None that collect data |
 
 Everything runs on your device. The app works fully offline. Network permission exists only for optional malware signature database updates — and you can deny it.
 
 Read the full [Privacy Policy](PRIVACY_POLICY.md). It's short because there's nothing to disclose.
 
+<br>
+
 ---
+
+<br>
 
 ## Tech Stack
 
 | Component | Technology |
-|-----------|-----------|
+| :-- | :-- |
 | Language | Kotlin 100% |
 | UI | Jetpack Compose + Material 3 |
 | Architecture | MVVM + Hilt DI |
@@ -181,14 +227,23 @@ Read the full [Privacy Policy](PRIVACY_POLICY.md). It's short because there's no
 | Min SDK | Android 8.0 (API 26) |
 | Target SDK | Android 16 (API 36) |
 
+<br>
+
 ---
+
+<br>
 
 ## Permissions — And Why
 
 Every permission has a reason. No permission is used to collect your data.
 
+<details>
+<summary><strong>View all permissions</strong></summary>
+
+<br>
+
 | Permission | Why |
-|---|---|
+| :-- | :-- |
 | `QUERY_ALL_PACKAGES` | List installed apps for security scanning |
 | `INTERNET` | Optional malware signature database updates (works without it) |
 | `ACCESS_NETWORK_STATE` | Check connectivity before signature updates |
@@ -205,7 +260,13 @@ Every permission has a reason. No permission is used to collect your data.
 | `VIBRATE` | Anti-theft alarm |
 | `BIND_VPN_SERVICE` | Local DNS-based web protection (no remote server) |
 
+</details>
+
+<br>
+
 ---
+
+<br>
 
 ## Building from Source
 
@@ -217,24 +278,33 @@ cd blueth-guard
 ```
 
 For signed release builds:
+
 ```bash
 ./gradlew assembleRelease   # → signed APK (direct install)
 ./gradlew bundleRelease     # → signed AAB (Play Store upload)
 ```
 
+<br>
+
 ---
+
+<br>
 
 ## Open Source Credits
 
 | Project | Usage | License |
-|---------|-------|---------|
+| :-- | :-- | :-- |
 | [Exodus Privacy](https://exodus-privacy.eu.org/) | Tracker detection database | GPL-3.0 |
 | [LibreAV](https://github.com/projectmatris/antimalwareapp) | Malware detection patterns | GPL-3.0 |
 | [AppManager](https://github.com/MuntashirAkon/AppManager) | Package management patterns | GPL-3.0 |
 | [NetGuard](https://github.com/M66B/NetGuard) | Network monitoring patterns | GPL-3.0 |
 | [Hypatia](https://divestos.org/pages/our_apps#hypatia) | ClamAV scanning patterns | GPL-3.0 |
 
+<br>
+
 ---
+
+<br>
 
 ## Contributing
 
@@ -242,27 +312,36 @@ Contributions welcome! Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 Found a bug? [Open an issue.](https://github.com/LaunchDay-Studio-Inc/blueth-guard/issues)
 
+<br>
+
 ---
 
 ## License
 
 GPL-3.0 — see [LICENSE](LICENSE)
 
----
-
-## Links
-
-- **[blueth.online](https://blueth.online)** — Website
-- **[Download](https://blueth.online/products/guard)** — Get the APK
-- **[Discord](https://discord.gg/bJDGXc4DvW)** — Community & support
-- **[Issues](https://github.com/LaunchDay-Studio-Inc/blueth-guard/issues)** — Bug reports
-- **[Changelog](CHANGELOG.md)** — Version history
-- **[Privacy Policy](PRIVACY_POLICY.md)** — Read it, it's short
+<br>
 
 ---
+
+<br>
+
+<p align="center">
+  <a href="https://blueth.online"><img src="https://img.shields.io/badge/Website-blueth.online-0A1628?style=for-the-badge&logoColor=white" alt="Website" /></a>
+  &nbsp;
+  <a href="https://github.com/LaunchDay-Studio-Inc/blueth-guard/releases/latest"><img src="https://img.shields.io/badge/⬇_Download-APK-00C853?style=for-the-badge&logo=android&logoColor=white" alt="Download" /></a>
+  &nbsp;
+  <a href="https://discord.gg/bJDGXc4DvW"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" /></a>
+  &nbsp;
+  <a href="https://github.com/LaunchDay-Studio-Inc/blueth-guard/issues"><img src="https://img.shields.io/badge/Bugs-Report-FF6D00?style=for-the-badge&logo=github&logoColor=white" alt="Issues" /></a>
+  &nbsp;
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Changelog-History-607D8B?style=for-the-badge" alt="Changelog" /></a>
+</p>
+
+<br>
 
 <p align="center">
   <strong>Made by <a href="https://launchdaystudio.com">LaunchDay Studio</a></strong><br>
   <em>Security should be free. Privacy shouldn't cost extra.</em><br><br>
-  If this app helped you, ⭐ the repo and tell a friend. That's all we ask.
+  If this app helped you, star the repo and tell a friend. That's all we ask.
 </p>
