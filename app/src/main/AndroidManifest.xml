@@ -36,9 +36,12 @@
     <!-- WiFi security -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
-    <!-- Location (for anti-theft) -->
+    <!-- Location (for anti-theft + Wi-Fi scan) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission
+        android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
 
     <!-- Vibrate (for anti-theft alarm) -->
     <uses-permission android:name="android.permission.VIBRATE" />

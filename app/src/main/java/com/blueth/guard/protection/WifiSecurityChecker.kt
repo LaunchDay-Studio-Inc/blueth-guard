@@ -1,10 +1,13 @@
 package com.blueth.guard.protection
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
 import android.os.Build
+import androidx.core.content.ContextCompat
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -44,10 +47,8 @@ class WifiSecurityChecker @Inject constructor(
         val wifiInfo = wifiManager.connectionInfo
         val ssid = wifiInfo?.ssid?.removeSurrounding("\"") ?: "Unknown"
 
-        // Detect security type
         val securityType = detectSecurityType(wifiManager)
 
-        // DNS servers
         val dnsServers = mutableListOf<String>()
         val dhcpInfo = wifiManager.dhcpInfo
         if (dhcpInfo != null) {
@@ -55,15 +56,13 @@ class WifiSecurityChecker @Inject constructor(
             if (dhcpInfo.dns2 != 0) dnsServers.add(intToIp(dhcpInfo.dns2))
         }
 
-        // Generate warnings
         val warnings = mutableListOf<String>()
         when (securityType) {
             WifiSecurityType.OPEN -> warnings.add("You're on an open Wi-Fi network. Your traffic may be visible to others.")
             WifiSecurityType.WEP -> warnings.add("WEP encryption is insecure and can be cracked in minutes. Use WPA2/WPA3 instead.")
-            else -> { }
+            else -> {}
         }
 
-        // Check for known privacy-hostile DNS
         val privacyHostileDns = setOf("114.114.114.114", "119.29.29.29")
         dnsServers.forEach { dns ->
             if (dns in privacyHostileDns) {
@@ -82,16 +81,20 @@ class WifiSecurityChecker @Inject constructor(
 
     @Suppress("DEPRECATION")
     private fun detectSecurityType(wifiManager: WifiManager): WifiSecurityType {
-        try {
-            val scanResults = wifiManager.scanResults ?: return WifiSecurityType.UNKNOWN
+        if (!hasWifiScanPermission()) {
+            return WifiSecurityType.UNKNOWN
+        }
+
+        return try {
+            val scanResults = wifiManager.scanResults
             val currentSsid = wifiManager.connectionInfo?.ssid?.removeSurrounding("\"")
 
-            val currentNetwork = scanResults.find {
+            val currentNetwork = scanResults.firstOrNull {
                 it.SSID == currentSsid
             } ?: return WifiSecurityType.UNKNOWN
 
             val capabilities = currentNetwork.capabilities
-            return when {
+            when {
                 capabilities.contains("WPA3") -> WifiSecurityType.WPA3
                 capabilities.contains("WPA2") -> WifiSecurityType.WPA2
                 capabilities.contains("WPA") -> WifiSecurityType.WPA
@@ -100,7 +103,21 @@ class WifiSecurityChecker @Inject constructor(
                 else -> WifiSecurityType.UNKNOWN
             }
         } catch (_: Exception) {
-            return WifiSecurityType.UNKNOWN
+            WifiSecurityType.UNKNOWN
+        }
+    }
+
+    private fun hasWifiScanPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                app,
+                Manifest.permission.NEARBY_WIFI_DEVICES
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(
+                app,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
         }
     }
 
