@@ -1,6 +1,7 @@
 package com.blueth.guard.protection
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
@@ -80,6 +81,7 @@ class WifiSecurityChecker @Inject constructor(
     }
 
     @Suppress("DEPRECATION")
+    @SuppressLint("MissingPermission")
     private fun detectSecurityType(wifiManager: WifiManager): WifiSecurityType {
         if (!hasWifiScanPermission()) {
             return WifiSecurityType.UNKNOWN
