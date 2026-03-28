@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.0-beta] — 2026-03-28
+
+### New
+- **Official Blueth Guard icon** — custom shield icon replaces placeholder, applied across all densities and Play Store listing
+- Version bump to 1.1.0-beta (versionCode 9)
+
+### Changed
+- Switched from adaptive vector icon to high-quality raster PNG icon at all mipmap densities
+- Removed ic_launcher_foreground.xml and ic_launcher_background.xml vector drawables (replaced by PNG)
+
 ## [1.0.0-beta3] — 2026-03-28
 
 ### New Features

@@ -15,8 +15,8 @@ android {
         applicationId = "com.blueth.guard"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.0.0-beta3"
+        versionCode = 9
+        versionName = "1.1.0-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
