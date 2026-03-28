@@ -101,7 +101,7 @@ Same code, same features, same privacy.
 - No root needed
 - No internet required (works fully offline)
 
-> **Beta** — Core features are stable. Rough edges exist. [Report bugs here.](https://github.com/LaunchDay-Studio-Inc/blueth-guard/issues)
+> **v1.2.0-beta** — Core features are stable. Rough edges exist. See [CHANGELOG](CHANGELOG.md) for what's new. [Report bugs here.](https://github.com/LaunchDay-Studio-Inc/blueth-guard/issues)
 
 <br>
 
@@ -114,7 +114,7 @@ Same code, same features, same privacy.
 ### 🛡️ Security Scanner
 Not a fake progress bar — a real multi-factor threat engine.
 
-- **Deep File Scanner** — scans your entire storage for malware, corrupted files, suspicious APKs, and double-extension tricks (`.jpg.exe`)
+- **Deep File Scanner** — scans your entire storage for malware, corrupted files, suspicious APKs, double-extension tricks (`.jpg.exe`), large unused files (>100 MB), stale files (>6 months), and leftover data from uninstalled apps
 - **App Threat Analysis** — multi-factor scoring combining permissions, embedded trackers, APK signatures, and behavioral metadata
 - **Malware Signature Database** — bundled + auto-updating hash database checked against every file and APK
 - **Tracker Detection** — identifies 200+ embedded advertising and analytics trackers via the Exodus Privacy database
@@ -143,9 +143,9 @@ Your phone. Your data. Keep it that way.
 ### 📊 Privacy Dashboard
 Know exactly what your apps are doing behind your back.
 
-- **Privacy Score** — 4-factor scoring (permissions 40%, trackers 20%, network 20%, install source 20%)
+- **Privacy Score** — 4-factor scoring (permissions 40%, trackers 20%, network 20%, install source 20%) — tap any stat card to see matching apps
 - **Permission Monitor** — tracks permission changes over time with snapshot diffing
-- **Network Monitor** — per-app data usage with suspicious activity flagging (upload > 3x download = red flag)
+- **Network Monitor** — per-app data usage with suspicious activity flagging (upload > 3x download = red flag) — tap any app for upload/download detail and quick settings access
 - **Clipboard Guard** — detects apps silently reading your clipboard (never logged, memory-only)
 - **Install Guard** — automatically scans every new app install and alerts you immediately
 - **Actionable Recommendations** — every privacy issue has a "Fix Now" button that takes you straight to the right settings page
@@ -154,8 +154,8 @@ Know exactly what your apps are doing behind your back.
 Actual optimization. Not a fake "boost" animation.
 
 - **App Hibernation** — force-stop background resource hogs on demand or automatically on screen-off / schedule
-- **Process Manager** — kills actual resource hogs, not everything blindly. Shows real RAM freed.
-- **Cache Cleaner** — per-app cache breakdown with honest behavior (Android won't let third-party apps clear other apps' caches — we tell you that upfront and open the right settings page)
+- **Process Manager** — kills actual resource hogs, not everything blindly. Shows real RAM freed with before/after comparison.
+- **Cache Cleaner** — per-app cache breakdown with honest behavior. Clears Blueth Guard's own cache directly; for other apps, explains Android's limitations and opens the right settings page
 - **Storage Analyzer** — visual breakdown of what's consuming your space
 - **Duplicate Finder** — MD5-based file deduplication, scoped storage aware
 - **Bloatware Identifier** — 100+ known bloatware entries across Samsung, OnePlus, Xiaomi, Huawei, Google, and carriers
