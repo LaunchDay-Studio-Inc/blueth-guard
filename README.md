@@ -1,12 +1,13 @@
 <p align="center">
-  <img src="app/src/main/ic_launcher-playstore.png" alt="Blueth Guard" width="160" />
+  <a href="https://blueth.online"><img src="app/src/main/ic_launcher-playstore.png" alt="Blueth Guard" width="160" /></a>
 </p>
 
-<h1 align="center">Blueth Guard</h1>
+<h1 align="center"><a href="https://blueth.online">Blueth Guard</a></h1>
 
 <p align="center">
   <strong>Free. Open-source. No ads. No tracking. No BS.</strong><br>
-  The security app your phone actually deserves.
+  The security app your phone actually deserves.<br>
+  <a href="https://blueth.online">blueth.online</a>
 </p>
 
 <br>
