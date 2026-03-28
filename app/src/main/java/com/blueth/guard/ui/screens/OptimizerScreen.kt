@@ -672,15 +672,24 @@ private fun ProcessesTab(viewModel: OptimizerViewModel, context: Context) {
     val usedRam = ramTotal - ramAvailable
     val ramPercent = if (ramTotal > 0) usedRam.toFloat() / ramTotal else 0f
 
-    // Check usage access
+    // Check usage access (unsafeCheckOpNoThrow requires API 29+)
     val hasUsageAccess = remember {
         try {
             val appOps = context.getSystemService(android.content.Context.APP_OPS_SERVICE) as android.app.AppOpsManager
-            val mode = appOps.unsafeCheckOpNoThrow(
-                android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
-                context.packageName
-            )
+            val mode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                appOps.unsafeCheckOpNoThrow(
+                    android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    android.os.Process.myUid(),
+                    context.packageName
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                appOps.checkOpNoThrow(
+                    android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    android.os.Process.myUid(),
+                    context.packageName
+                )
+            }
             mode == android.app.AppOpsManager.MODE_ALLOWED
         } catch (_: Exception) { false }
     }

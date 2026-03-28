@@ -105,11 +105,20 @@ class PrivacyViewModel @Inject constructor(
     private fun checkUsageAccess() {
         try {
             val appOps = application.getSystemService(android.content.Context.APP_OPS_SERVICE) as AppOpsManager
-            val mode = appOps.unsafeCheckOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
-                application.packageName
-            )
+            val mode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                appOps.unsafeCheckOpNoThrow(
+                    AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    android.os.Process.myUid(),
+                    application.packageName
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                appOps.checkOpNoThrow(
+                    AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    android.os.Process.myUid(),
+                    application.packageName
+                )
+            }
             _hasUsageAccess.value = mode == AppOpsManager.MODE_ALLOWED
         } catch (_: Exception) {
             _hasUsageAccess.value = false
