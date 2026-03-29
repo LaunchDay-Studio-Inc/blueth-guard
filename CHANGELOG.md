@@ -19,7 +19,7 @@
 - **Network consumers** are now clickable — tap to see upload/download breakdown and open app settings
 - **Cache Clean All** now shows confirmation dialog explaining Android limitations before opening settings
 - **Processes tab** shows Usage Access permission prompt when not granted
-- **Adaptive icon** XMLs created for Android 8+ (API 26+) adaptive icon support
+- **Adaptive icon** fully rebuilt — transparent foreground layer, distinct circular round icon, monochrome layer for Android 13+ themed icons
 
 ### Fixed
 - Network data deduplication — old entries deleted before inserting new data to prevent accumulation

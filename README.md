@@ -103,6 +103,20 @@ Same code, same features, same privacy.
 
 > **v1.2.0-beta** — Core features are stable. Rough edges exist. See [CHANGELOG](CHANGELOG.md) for what's new. [Report bugs here.](https://github.com/LaunchDay-Studio-Inc/blueth-guard/issues)
 
+### What's New in v1.2.0-beta
+
+- **Quick Scan on Home** — inline scan with mini-report (virus/malware/tracker counts)
+- **WiFi Security card** on the Home dashboard
+- **Anti-Theft shortcut** on the Home screen
+- **Deep Scan** now finds large files, old files, leftover app data, and scans SD cards
+- **Privacy QuickStats** and **Network consumers** are now interactive — tap to drill down
+- **Adaptive icon** fully fixed with transparent foreground, circular round variant, and Android 13+ monochrome support
+- **RAM Boost** now shows before/after RAM comparison
+- **Install Guard seeding** — pre-populates history on first launch
+- **Own cache clearing** — Blueth Guard clears its own cache directly
+
+Full details: [CHANGELOG.md](CHANGELOG.md)
+
 <br>
 
 ---
@@ -216,9 +230,10 @@ Read the full [Privacy Policy](PRIVACY_POLICY.md). It's short because there's no
 
 | Component | Technology |
 | :-- | :-- |
-| Language | Kotlin 100% |
+| Language | Kotlin 2.1.10 (100%) |
 | UI | Jetpack Compose + Material 3 |
-| Architecture | MVVM + Hilt DI |
+| Architecture | MVVM + Hilt DI (Dagger 2.56.1) |
+| Build | AGP 8.9.3, KSP 2.1.10 |
 | Database | Room (privacy events, battery snapshots, scan history) |
 | Scanner | Heuristic multi-factor engine + signature DB |
 | Web Protection | Local VPN DNS filter (no remote server) |
