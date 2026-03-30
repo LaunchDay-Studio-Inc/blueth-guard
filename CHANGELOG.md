@@ -8,8 +8,8 @@
 - **Accessibility prompt dialog** — Optimizer shows prompt when accessibility is not enabled before One-Tap Optimize
 
 ### Improved
-- **DNS blocklist** expanded from ~90 to 2,500+ domains across 20+ threat categories
-- **Tracker database** expanded from 93 to 200+ signatures across 7 categories
+- **DNS blocklist** expanded from ~90 to 430+ real malicious domains across 20+ threat categories
+- **Tracker database** expanded from 93 to 170+ signatures across 7 categories
 - **Remote signature database** (signature-db/latest.json) populated with 20 malware packages, 10 patterns, and 10 tracker entries
 - **ProcessManager** now uses AccessibilityService for genuine Force Stop via Settings
 - **CacheCleaner** now uses AccessibilityService for genuine Cache Clear via Settings
@@ -95,7 +95,7 @@
 - Renamed "ML-based detection" to "heuristic threat analysis" (honest labeling — the engine uses weighted multi-factor scoring, not a TFLite model)
 
 ### Existing Features (from alpha)
-- Security scanner with 200+ tracker detection (Exodus Privacy database)
+- Security scanner with 170+ tracker detection (Exodus Privacy database)
 - Permission auditor with risk scoring
 - APK signature verification against known malware families
 - Smart optimizer (cache, processes, duplicates, bloatware)

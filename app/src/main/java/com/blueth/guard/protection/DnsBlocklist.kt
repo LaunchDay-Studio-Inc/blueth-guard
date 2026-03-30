@@ -4,7 +4,7 @@ object DnsBlocklist {
     const val VERSION = 2
 
     /**
-     * Known malicious domains — bundled blocklist with 2500+ entries.
+     * Known malicious domains — bundled blocklist with 430+ entries.
      * Categories: phishing, malware C2, scam, cryptojacking, stalkerware, fake apps.
      * Sources: Inspired by abuse.ch, OpenPhish, CERT feeds, Android malware research.
      * Updated via SignatureUpdateManager for fresh threats.

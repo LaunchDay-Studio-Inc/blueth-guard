@@ -107,8 +107,8 @@ Same code, same features, same privacy.
 
 - **AccessibilityService** — real Force Stop and Cache Clear automation via Android Settings UI
 - **Onboarding Accessibility page** — guided setup for enabling accessibility permission
-- **DNS blocklist** expanded from ~90 to 2,500+ domains across 20+ threat categories
-- **Tracker database** expanded to 200+ signatures across 7 categories
+- **DNS blocklist** expanded from ~90 to 430+ real malicious domains across 20+ threat categories
+- **Tracker database** expanded to 170+ signatures across 7 categories
 - **VPN packet passthrough fixed** — DNS-only routing eliminates infinite packet loop
 - **Anti-theft alarm** now auto-stops after 30 seconds instead of looping indefinitely
 - **Remote signature database** populated with real malware packages, patterns, and tracker entries
@@ -129,7 +129,7 @@ Not a fake progress bar — a real multi-factor threat engine.
 - **Deep File Scanner** — scans your entire storage for malware, corrupted files, suspicious APKs, double-extension tricks (`.jpg.exe`), large unused files (>100 MB), stale files (>6 months), and leftover data from uninstalled apps
 - **App Threat Analysis** — multi-factor scoring combining permissions, embedded trackers, APK signatures, and behavioral metadata
 - **Malware Signature Database** — bundled + auto-updating hash database checked against every file and APK
-- **Tracker Detection** — identifies 200+ embedded advertising and analytics trackers via the Exodus Privacy database
+- **Tracker Detection** — identifies 170+ embedded advertising and analytics trackers via the Exodus Privacy database
 - **Permission Auditor** — flags dangerous permission combinations with plain-English risk explanations
 - **Sideload Detector** — shows which apps were installed outside the Play Store
 - **Device Admin Checker** — reveals apps with hidden device administrator access
