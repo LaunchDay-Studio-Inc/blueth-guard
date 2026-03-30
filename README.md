@@ -101,19 +101,17 @@ Same code, same features, same privacy.
 - No root needed
 - No internet required (works fully offline)
 
-> **v1.2.0-beta** — Core features are stable. Rough edges exist. See [CHANGELOG](CHANGELOG.md) for what's new. [Report bugs here.](https://github.com/LaunchDay-Studio-Inc/blueth-guard/issues)
+> **v1.3.0-beta** — Core features are stable. Rough edges exist. See [CHANGELOG](CHANGELOG.md) for what's new. [Report bugs here.](https://github.com/LaunchDay-Studio-Inc/blueth-guard/issues)
 
-### What's New in v1.2.0-beta
+### What's New in v1.3.0-beta
 
-- **Quick Scan on Home** — inline scan with mini-report (virus/malware/tracker counts)
-- **WiFi Security card** on the Home dashboard
-- **Anti-Theft shortcut** on the Home screen
-- **Deep Scan** now finds large files, old files, leftover app data, and scans SD cards
-- **Privacy QuickStats** and **Network consumers** are now interactive — tap to drill down
-- **Adaptive icon** fully fixed with transparent foreground, circular round variant, and Android 13+ monochrome support
-- **RAM Boost** now shows before/after RAM comparison
-- **Install Guard seeding** — pre-populates history on first launch
-- **Own cache clearing** — Blueth Guard clears its own cache directly
+- **AccessibilityService** — real Force Stop and Cache Clear automation via Android Settings UI
+- **Onboarding Accessibility page** — guided setup for enabling accessibility permission
+- **DNS blocklist** expanded from ~90 to 2,500+ domains across 20+ threat categories
+- **Tracker database** expanded to 200+ signatures across 7 categories
+- **VPN packet passthrough fixed** — DNS-only routing eliminates infinite packet loop
+- **Anti-theft alarm** now auto-stops after 30 seconds instead of looping indefinitely
+- **Remote signature database** populated with real malware packages, patterns, and tracker entries
 
 Full details: [CHANGELOG.md](CHANGELOG.md)
 
@@ -149,7 +147,7 @@ Local DNS-level blocking — no remote servers, no data leaves your device.
 Your phone. Your data. Keep it that way.
 
 - **Remote Lock** — instantly lock your device with one tap
-- **Sound Alarm** — blast a max-volume alarm even on silent mode (30 seconds, impossible to miss)
+- **Sound Alarm** — blast a max-volume alarm even on silent mode (auto-stops after 30 seconds)
 - **Location Tracking** — shows last known GPS location with a Google Maps link
 - **Emergency Wipe** — nuclear option behind double confirmation — wipes all data if your device is stolen
 - **Device Admin** — secure lock and wipe via Android's official Device Admin API
@@ -168,8 +166,8 @@ Know exactly what your apps are doing behind your back.
 Actual optimization. Not a fake "boost" animation.
 
 - **App Hibernation** — force-stop background resource hogs on demand or automatically on screen-off / schedule
-- **Process Manager** — kills actual resource hogs, not everything blindly. Shows real RAM freed with before/after comparison.
-- **Cache Cleaner** — per-app cache breakdown with honest behavior. Clears Blueth Guard's own cache directly; for other apps, explains Android's limitations and opens the right settings page
+- **Process Manager** — kills actual resource hogs, not everything blindly. Uses AccessibilityService for real Force Stop via Settings. Shows real RAM freed with before/after comparison.
+- **Cache Cleaner** — per-app cache breakdown with honest behavior. Uses AccessibilityService for real cache clearing via Settings. Clears Blueth Guard's own cache directly; for other apps, explains Android's limitations and opens the right settings page
 - **Storage Analyzer** — visual breakdown of what's consuming your space
 - **Duplicate Finder** — MD5-based file deduplication, scoped storage aware
 - **Bloatware Identifier** — 100+ known bloatware entries across Samsung, OnePlus, Xiaomi, Huawei, Google, and carriers
@@ -275,6 +273,7 @@ Every permission has a reason. No permission is used to collect your data.
 | `ACCESS_WIFI_STATE` | Wi-Fi security analysis |
 | `VIBRATE` | Anti-theft alarm |
 | `BIND_VPN_SERVICE` | Local DNS-based web protection (no remote server) |
+| `BIND_ACCESSIBILITY_SERVICE` | Automate Force Stop and Cache Clear via Settings UI |
 
 </details>
 
