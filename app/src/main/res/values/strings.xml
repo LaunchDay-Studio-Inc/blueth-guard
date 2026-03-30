@@ -254,6 +254,16 @@
     <string name="onboarding_ready_desc">Blueth Guard is ready to protect your device.</string>
     <string name="onboarding_start">Start Scanning</string>
 
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_label">Blueth Guard Optimizer</string>
+    <string name="accessibility_service_description">Allows Blueth Guard to automate force-stopping apps and clearing caches through Android Settings. This service ONLY interacts with the Settings app — it cannot read or access any other app content.</string>
+    <string name="accessibility_permission_title">Accessibility Access</string>
+    <string name="accessibility_permission_desc">Enable Accessibility to let Blueth Guard force-stop apps and clear caches automatically. Without this, you\'ll need to do it manually for each app.</string>
+    <string name="accessibility_permission_grant">Enable Accessibility</string>
+    <string name="accessibility_permission_granted">Accessibility Enabled</string>
+    <string name="onboarding_accessibility_title">Accessibility Access</string>
+    <string name="onboarding_accessibility_desc">This lets Blueth Guard automatically force-stop apps and clear caches. It only interacts with the Settings app — nothing else.</string>
+
     <!-- Widget -->
     <string name="widget_description">Shows your device security score at a glance</string>
 

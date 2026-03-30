@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.blueth.guard.R
+import com.blueth.guard.accessibility.GuardAccessibilityService
 import com.blueth.guard.ui.viewmodel.OnboardingViewModel
 import kotlinx.coroutines.launch
 
@@ -61,7 +63,7 @@ fun OnboardingScreen(
     onComplete: () -> Unit,
     viewModel: OnboardingViewModel = hiltViewModel()
 ) {
-    val pagerState = rememberPagerState(pageCount = { 6 })
+    val pagerState = rememberPagerState(pageCount = { 7 })
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -76,7 +78,8 @@ fun OnboardingScreen(
                 2 -> AllFilesAccessPage(context)
                 3 -> LocationPage(context)
                 4 -> NotificationsPage(context)
-                5 -> ReadyPage(
+                5 -> AccessibilityPage(context)
+                6 -> ReadyPage(
                     onStart = {
                         viewModel.completeOnboarding()
                         onComplete()
@@ -86,7 +89,7 @@ fun OnboardingScreen(
         }
 
         // Skip button
-        if (pagerState.currentPage < 5) {
+        if (pagerState.currentPage < 6) {
             TextButton(
                 onClick = {
                     viewModel.completeOnboarding()
@@ -111,7 +114,7 @@ fun OnboardingScreen(
         ) {
             // Dot indicators
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(6) { index ->
+                repeat(7) { index ->
                     val color = if (index == pagerState.currentPage)
                         MaterialTheme.colorScheme.primary
                     else
@@ -128,8 +131,8 @@ fun OnboardingScreen(
                 }
             }
 
-            // Next button (pages 0-4)
-            if (pagerState.currentPage < 5) {
+            // Next button (pages 0-5)
+            if (pagerState.currentPage < 6) {
                 Button(
                     onClick = {
                         scope.launch {
@@ -378,6 +381,58 @@ private fun LocationPage(context: Context) {
                 ) {
                     Text("Grant Location Permission")
                 }
+            }
+        }
+    )
+}
+
+@Composable
+private fun AccessibilityPage(context: Context) {
+    var isEnabled by remember { mutableStateOf(GuardAccessibilityService.isServiceEnabled(context)) }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        isEnabled = GuardAccessibilityService.isServiceEnabled(context)
+    }
+
+    OnboardingPageContent(
+        icon = Icons.Filled.TouchApp,
+        title = stringResource(R.string.onboarding_accessibility_title),
+        description = stringResource(R.string.onboarding_accessibility_desc),
+        extra = {
+            Spacer(Modifier.height(24.dp))
+            if (isEnabled) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        stringResource(R.string.accessibility_permission_granted),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        launcher.launch(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    }
+                ) {
+                    Text(stringResource(R.string.accessibility_permission_grant))
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Find \u2018Blueth Guard Optimizer\u2019 and enable it",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     )

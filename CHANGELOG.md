@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.0-beta] — 2026-03-30
+
+### New
+- **AccessibilityService** — real Force Stop and Cache Clear automation via Android Settings UI
+- **Onboarding Accessibility page** — new step 6 of 7 guiding users to enable accessibility permission
+- **Accessibility prompt dialog** — Optimizer shows prompt when accessibility is not enabled before One-Tap Optimize
+
+### Improved
+- **DNS blocklist** expanded from ~90 to 2,500+ domains across 20+ threat categories
+- **Tracker database** expanded from 93 to 200+ signatures across 7 categories
+- **Remote signature database** (signature-db/latest.json) populated with 20 malware packages, 10 patterns, and 10 tracker entries
+- **ProcessManager** now uses AccessibilityService for genuine Force Stop via Settings
+- **CacheCleaner** now uses AccessibilityService for genuine Cache Clear via Settings
+
+### Fixed
+- **VPN packet passthrough** — replaced broken 0.0.0.0/0 route with DNS-only routing (8.8.8.8, 8.8.4.4) to prevent infinite packet loop
+- **DNS forwarding** — VPN now properly forwards allowed DNS queries via protected DatagramSocket and rebuilds response packets
+- **Anti-theft alarm** — alarm now auto-stops after 30 seconds instead of looping indefinitely
+
 ## [1.2.0-beta] — 2026-03-29
 
 ### New

@@ -15,8 +15,11 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.Settings
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,6 +37,13 @@ class AntiTheftManager @Inject constructor(
     private val app: Application
 ) {
     private var alarmPlayer: MediaPlayer? = null
+    private val alarmScope = CoroutineScope(Dispatchers.Main + Job())
+    private var alarmTimerJob: Job? = null
+
+    companion object {
+        const val ALARM_DURATION_MS = 30_000L // 30 seconds
+    }
+
     private val devicePolicyManager: DevicePolicyManager by lazy {
         app.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     }
@@ -103,12 +113,21 @@ class AntiTheftManager @Inject constructor(
                 start()
             }
 
+            // Auto-stop after 30 seconds
+            alarmTimerJob?.cancel()
+            alarmTimerJob = alarmScope.launch {
+                delay(ALARM_DURATION_MS)
+                stopAlarm()
+            }
+
             // Vibrate
             vibrate()
         } catch (_: Exception) { }
     }
 
     fun stopAlarm() {
+        alarmTimerJob?.cancel()
+        alarmTimerJob = null
         try {
             alarmPlayer?.stop()
             alarmPlayer?.release()

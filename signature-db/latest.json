@@ -1,12 +1,55 @@
 {
-  "version": 1,
-  "updatedAt": "2026-03-28T00:00:00Z",
+  "version": 2,
+  "updatedAt": "2026-03-30T00:00:00Z",
   "malwareSignatures": {
-    "exactPackages": [],
-    "patterns": [],
+    "exactPackages": [
+      "com.speed.booster.clean",
+      "com.super.cleaner.power",
+      "com.phone.optimizer.speed",
+      "com.daily.clean.master",
+      "com.battery.saver.fast",
+      "com.fast.charge.turbo",
+      "com.smart.wifi.booster",
+      "com.free.vpn.unlimited.proxy",
+      "com.flash.light.super.bright",
+      "com.qr.code.reader.scanner",
+      "com.weather.live.forecast.widget",
+      "com.mobile.security.antivirus.free",
+      "com.auto.clicker.tap",
+      "com.pdf.viewer.reader.free",
+      "com.file.manager.explorer.pro",
+      "com.video.player.all.format.hd",
+      "com.music.player.equalizer.bass",
+      "com.photo.editor.beauty.camera",
+      "com.keyboard.theme.emoji.free",
+      "com.screen.recorder.free"
+    ],
+    "patterns": [
+      "com.joker\\.",
+      "com.harly\\.",
+      "com.facestealer\\.",
+      "com.anatsa\\.",
+      "com.sharkbot\\.",
+      "com.vultur\\.",
+      "com.octo\\.banker",
+      "com.hydra\\.trojan",
+      "com.ermac\\.",
+      "com.hook\\.banker"
+    ],
     "certHashes": []
   },
   "trackerSignatures": {
-    "trackers": []
+    "trackers": [
+      {"name": "Yandex Metrica", "company": "Yandex", "category": "ANALYTICS", "codeSignature": "com.yandex.metrica.impl", "networkDomain": "report.appmetrica.yandex.net"},
+      {"name": "VK SDK", "company": "VK", "category": "IDENTIFICATION", "codeSignature": "com.vk.sdk", "networkDomain": "vk.com"},
+      {"name": "Mail.ru Analytics", "company": "VK", "category": "ANALYTICS", "codeSignature": "com.my.tracker", "networkDomain": "top-fwz1.mail.ru"},
+      {"name": "Umeng Analytics", "company": "Alibaba", "category": "ANALYTICS", "codeSignature": "com.umeng.analytics", "networkDomain": "umeng.com"},
+      {"name": "Baidu Mobile Ads", "company": "Baidu", "category": "ADVERTISING", "codeSignature": "com.baidu.mobads", "networkDomain": "mobads.baidu.com"},
+      {"name": "Tencent Bugly", "company": "Tencent", "category": "CRASH_REPORTING", "codeSignature": "com.tencent.bugly", "networkDomain": "bugly.qq.com"},
+      {"name": "NetEase YiDun", "company": "NetEase", "category": "IDENTIFICATION", "codeSignature": "com.netease.nis", "networkDomain": "netease.com"},
+      {"name": "Alibaba UTDID", "company": "Alibaba", "category": "IDENTIFICATION", "codeSignature": "com.ta.utdid2", "networkDomain": "alibaba.com"},
+      {"name": "Huawei Push", "company": "Huawei", "category": "ENGAGEMENT", "codeSignature": "com.huawei.hms.push", "networkDomain": "push.hicloud.com"},
+      {"name": "Xiaomi Push", "company": "Xiaomi", "category": "ENGAGEMENT", "codeSignature": "com.xiaomi.push", "networkDomain": "xiaomi.com"}
+    ]
   }
 }

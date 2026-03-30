@@ -1,7 +1,9 @@
 package com.blueth.guard.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.blueth.guard.accessibility.GuardAccessibilityService
 import com.blueth.guard.optimizer.AppCacheInfo
 import com.blueth.guard.optimizer.AppHibernator
 import com.blueth.guard.optimizer.BloatwareApp
@@ -83,6 +85,9 @@ class OptimizerViewModel @Inject constructor(
     private val _lastKillResult = MutableStateFlow<KillResult?>(null)
     val lastKillResult: StateFlow<KillResult?> = _lastKillResult.asStateFlow()
 
+    private val _isAccessibilityEnabled = MutableStateFlow(false)
+    val isAccessibilityEnabled: StateFlow<Boolean> = _isAccessibilityEnabled.asStateFlow()
+
     private val _ramBeforeBoost = MutableStateFlow(0L)
     val ramBeforeBoost: StateFlow<Long> = _ramBeforeBoost.asStateFlow()
 
@@ -97,6 +102,10 @@ class OptimizerViewModel @Inject constructor(
 
     init {
         loadAll()
+    }
+
+    fun checkAccessibility(context: Context) {
+        _isAccessibilityEnabled.value = GuardAccessibilityService.isServiceEnabled(context)
     }
 
     fun loadAll() {
@@ -153,14 +162,17 @@ class OptimizerViewModel @Inject constructor(
     }
 
     fun clearAllCaches() {
-        val result = cacheCleaner.clearAllCaches()
-        val message = when (result) {
-            is ClearResult.OpenedSettings -> "Opened storage settings — clear caches manually"
-            is ClearResult.RequiresPermission -> "Permission required"
-            is ClearResult.Success -> "All caches cleared"
-            is ClearResult.Failed -> "Failed: ${result.reason}"
+        viewModelScope.launch {
+            val bigCaches = _appCaches.value.filter { it.cacheSize > 1_048_576 }.map { it.packageName }
+            val result = cacheCleaner.autoClearAllCaches(bigCaches) { _, _ -> }
+            val message = when (result) {
+                is ClearResult.OpenedSettings -> "Opened storage settings — clear caches manually"
+                is ClearResult.RequiresPermission -> "Permission required"
+                is ClearResult.Success -> "Clearing caches via accessibility..."
+                is ClearResult.Failed -> "Failed: ${result.reason}"
+            }
+            _snackbarMessage.value = message
         }
-        _snackbarMessage.value = message
     }
 
     fun clearOwnCache() {
@@ -171,7 +183,7 @@ class OptimizerViewModel @Inject constructor(
     }
 
     fun killProcess(packageName: String) {
-        val result = processManager.killProcess(packageName)
+        val result = processManager.forceStopApp(packageName)
         _snackbarMessage.value = result.message
         if (result.success) {
             refreshProcesses()
@@ -183,7 +195,7 @@ class OptimizerViewModel @Inject constructor(
             val (_, availBefore) = processManager.getRamInfo()
             _ramBeforeBoost.value = availBefore
 
-            val result = processManager.killAllKillable()
+            val result = processManager.forceStopAll()
             _lastKillResult.value = result
             _snackbarMessage.value = result.message
 

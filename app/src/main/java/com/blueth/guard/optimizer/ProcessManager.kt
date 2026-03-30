@@ -2,11 +2,16 @@ package com.blueth.guard.optimizer
 
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.os.Debug
+import android.provider.Settings as AndroidSettings
+import androidx.core.net.toUri
+import com.blueth.guard.accessibility.AutomationTask
+import com.blueth.guard.accessibility.GuardAccessibilityService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -239,5 +244,46 @@ class ProcessManager @Inject constructor(
         val memInfo = ActivityManager.MemoryInfo()
         activityManager.getMemoryInfo(memInfo)
         return Pair(memInfo.totalMem, memInfo.availMem)
+    }
+
+    fun forceStopApp(packageName: String): KillResult {
+        val service = GuardAccessibilityService.instance
+        if (service != null) {
+            service.queueTask(AutomationTask.ForceStopSingle(packageName))
+            val intent = Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = "package:$packageName".toUri()
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            return KillResult(
+                success = true, processesKilled = 1, estimatedMemoryFreedKb = 0,
+                message = "Force stopping via accessibility..."
+            )
+        }
+        return killProcess(packageName)
+    }
+
+    suspend fun forceStopAll(): KillResult = withContext(Dispatchers.IO) {
+        val service = GuardAccessibilityService.instance
+        val killList = getSmartKillList()
+        if (service != null && killList.isNotEmpty()) {
+            val totalMemory = killList.sumOf { it.memoryUsageKb }
+            service.queueTask(AutomationTask.ForceStop(
+                packages = killList.map { it.packageName },
+                onProgress = { _, _ -> }
+            ))
+            val intent = Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = "package:${killList.first().packageName}".toUri()
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            KillResult(
+                success = true, processesKilled = killList.size,
+                estimatedMemoryFreedKb = totalMemory,
+                message = "Force stopping ${killList.size} apps..."
+            )
+        } else {
+            killAllKillable()
+        }
     }
 }

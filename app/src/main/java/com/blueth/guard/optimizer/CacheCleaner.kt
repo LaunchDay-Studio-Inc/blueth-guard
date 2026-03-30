@@ -9,6 +9,8 @@ import android.os.Process
 import androidx.core.net.toUri
 import android.os.storage.StorageManager
 import android.provider.Settings
+import com.blueth.guard.accessibility.AutomationTask
+import com.blueth.guard.accessibility.GuardAccessibilityService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -144,5 +146,36 @@ class CacheCleaner @Inject constructor(
             }
         }
         return freed
+    }
+
+    fun autoClearCache(packageName: String): ClearResult {
+        val service = GuardAccessibilityService.instance
+        if (service != null) {
+            service.queueTask(AutomationTask.ClearCacheSingle(packageName))
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = "package:$packageName".toUri()
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            return ClearResult.Success
+        }
+        return clearAppCache(packageName)
+    }
+
+    fun autoClearAllCaches(packages: List<String>, onProgress: (Int, Int) -> Unit): ClearResult {
+        val service = GuardAccessibilityService.instance
+        if (service != null && packages.isNotEmpty()) {
+            service.queueTask(AutomationTask.ClearCache(
+                packages = packages,
+                onProgress = onProgress
+            ))
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = "package:${packages.first()}".toUri()
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            return ClearResult.Success
+        }
+        return clearAllCaches()
     }
 }

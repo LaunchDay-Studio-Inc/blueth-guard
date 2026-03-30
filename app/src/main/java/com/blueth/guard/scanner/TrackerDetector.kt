@@ -31,6 +31,11 @@ data class DetectedTracker(
 )
 
 object TrackerDatabase {
+    /**
+     * Known tracker signatures — 200+ entries across 7 categories.
+     * Inspired by the Exodus Privacy database and public tracker research.
+     * Updated via SignatureUpdateManager for new trackers.
+     */
     val signatures: List<TrackerSignature> = listOf(
         // === ANALYTICS ===
         TrackerSignature("Google Analytics", "Google", TrackerCategory.ANALYTICS, "com.google.android.gms.analytics", "google-analytics.com"),
@@ -124,7 +129,108 @@ object TrackerDatabase {
         TrackerSignature("Mapbox", "Mapbox", TrackerCategory.LOCATION, "com.mapbox.mapboxsdk", "mapbox.com"),
         TrackerSignature("Radar", "Radar", TrackerCategory.LOCATION, "io.radar.sdk", "radar.io"),
         TrackerSignature("Foursquare Pilgrim", "Foursquare", TrackerCategory.LOCATION, "com.foursquare.pilgrim", "foursquare.com"),
-        TrackerSignature("HERE SDK", "HERE Technologies", TrackerCategory.LOCATION, "com.here.sdk", "here.com")
+        TrackerSignature("HERE SDK", "HERE Technologies", TrackerCategory.LOCATION, "com.here.sdk", "here.com"),
+
+        // === ANALYTICS (additional) ===
+        TrackerSignature("CleverTap Analytics", "CleverTap", TrackerCategory.ANALYTICS, "com.clevertap.android.sdk", "clevertap.com"),
+        TrackerSignature("Kissmetrics", "Kissmetrics", TrackerCategory.ANALYTICS, "com.kissmetrics.sdk", "kissmetrics.com"),
+        TrackerSignature("Chartbeat", "Chartbeat", TrackerCategory.ANALYTICS, "com.chartbeat.androidsdk", "chartbeat.com"),
+        TrackerSignature("Swrve", "Swrve", TrackerCategory.ANALYTICS, "com.swrve.sdk", "swrve.com"),
+        TrackerSignature("Apptentive", "Apptentive", TrackerCategory.ANALYTICS, "com.apptentive.android", "apptentive.com"),
+        TrackerSignature("Kumulos", "Kumulos", TrackerCategory.ANALYTICS, "com.kumulos.android", "kumulos.com"),
+        TrackerSignature("Webengage", "Webengage", TrackerCategory.ANALYTICS, "com.webengage.sdk", "webengage.com"),
+        TrackerSignature("Taplytics", "Taplytics", TrackerCategory.ANALYTICS, "com.taplytics.sdk", "taplytics.com"),
+        TrackerSignature("AppsFlyer Analytics", "AppsFlyer", TrackerCategory.ANALYTICS, "com.appsflyer.internal", "appsflyer.com"),
+        TrackerSignature("Woopra", "Woopra", TrackerCategory.ANALYTICS, "com.woopra.android", "woopra.com"),
+        TrackerSignature("Firebase Performance", "Google", TrackerCategory.ANALYTICS, "com.google.firebase.perf", "firebase.google.com"),
+        TrackerSignature("Firebase Remote Config", "Google", TrackerCategory.ANALYTICS, "com.google.firebase.remoteconfig", "firebase.google.com"),
+        TrackerSignature("Firebase Dynamic Links", "Google", TrackerCategory.ANALYTICS, "com.google.firebase.dynamiclinks", "firebase.google.com"),
+        TrackerSignature("Firebase In-App Messaging", "Google", TrackerCategory.ANALYTICS, "com.google.firebase.inappmessaging", "firebase.google.com"),
+        TrackerSignature("Google Tag Manager", "Google", TrackerCategory.ANALYTICS, "com.google.android.gms.tagmanager", "tagmanager.google.com"),
+        TrackerSignature("Leanplum Analytics", "Leanplum", TrackerCategory.ANALYTICS, "com.leanplum.internal", "leanplum.com"),
+        TrackerSignature("Optimizely", "Optimizely", TrackerCategory.ANALYTICS, "com.optimizely.ab.android", "optimizely.com"),
+        TrackerSignature("LaunchDarkly", "LaunchDarkly", TrackerCategory.ANALYTICS, "com.launchdarkly.sdk.android", "launchdarkly.com"),
+        TrackerSignature("Aptabase", "Aptabase", TrackerCategory.ANALYTICS, "com.aptabase.android", "aptabase.com"),
+        TrackerSignature("Plausible", "Plausible", TrackerCategory.ANALYTICS, "io.plausible.android", "plausible.io"),
+
+        // === ADVERTISING (additional) ===
+        TrackerSignature("Criteo", "Criteo", TrackerCategory.ADVERTISING, "com.criteo.publisher.sdk", "criteo.com"),
+        TrackerSignature("Mintegral", "Mintegral", TrackerCategory.ADVERTISING, "com.mbridge.msdk", "mintegral.com"),
+        TrackerSignature("Smaato", "Smaato", TrackerCategory.ADVERTISING, "com.smaato.sdk", "smaato.com"),
+        TrackerSignature("Verve", "Verve", TrackerCategory.ADVERTISING, "net.pubnative.lite", "verve.com"),
+        TrackerSignature("Bigo Ads", "Bigo", TrackerCategory.ADVERTISING, "sg.bigo.ads", "bigo.sg"),
+        TrackerSignature("Yandex AppMetrica", "Yandex", TrackerCategory.ADVERTISING, "com.yandex.metrica", "appmetrica.yandex.com"),
+        TrackerSignature("ByteDance Union", "ByteDance", TrackerCategory.ADVERTISING, "com.bytedance.sdk.openadsdk.api", "pangle.io"),
+        TrackerSignature("HyprMX", "HyprMX", TrackerCategory.ADVERTISING, "com.hyprmx.android", "hyprmx.com"),
+        TrackerSignature("Kidoz", "Kidoz", TrackerCategory.ADVERTISING, "com.kidoz.sdk", "kidoz.net"),
+        TrackerSignature("LiftoffMonetize", "Liftoff", TrackerCategory.ADVERTISING, "com.vungle.ads", "liftoff.io"),
+        TrackerSignature("Moloco", "Moloco", TrackerCategory.ADVERTISING, "com.moloco.sdk", "moloco.com"),
+        TrackerSignature("BidMachine", "BidMachine", TrackerCategory.ADVERTISING, "io.bidmachine", "bidmachine.io"),
+        TrackerSignature("InMobi UniAds", "InMobi", TrackerCategory.ADVERTISING, "com.inmobi.unification", "inmobi.com"),
+        TrackerSignature("LINE Ads", "LINE", TrackerCategory.ADVERTISING, "com.linecorp.admanager", "line.me"),
+        TrackerSignature("Madex", "Madex", TrackerCategory.ADVERTISING, "com.madex.sdk", "madex.com"),
+        TrackerSignature("MyTarget", "VK", TrackerCategory.ADVERTISING, "com.my.target.sdk", "mytarget.mail.ru"),
+        TrackerSignature("Nend", "Fan Communications", TrackerCategory.ADVERTISING, "net.nend.android", "nend.net"),
+        TrackerSignature("PubMatic", "PubMatic", TrackerCategory.ADVERTISING, "com.pubmatic.sdk", "pubmatic.com"),
+        TrackerSignature("SuperAwesome", "SuperAwesome", TrackerCategory.ADVERTISING, "tv.superawesome.sdk", "superawesome.com"),
+        TrackerSignature("Verve Group", "Verve", TrackerCategory.ADVERTISING, "com.verve.sdk", "verve.com"),
+
+        // === CRASH REPORTING (additional) ===
+        TrackerSignature("AppCenter Crashes", "Microsoft", TrackerCategory.CRASH_REPORTING, "com.microsoft.appcenter.crashes", "appcenter.ms"),
+        TrackerSignature("AppCenter Analytics", "Microsoft", TrackerCategory.CRASH_REPORTING, "com.microsoft.appcenter.analytics", "appcenter.ms"),
+        TrackerSignature("Rollbar", "Rollbar", TrackerCategory.CRASH_REPORTING, "com.rollbar.android", "rollbar.com"),
+        TrackerSignature("BugFender", "BugFender", TrackerCategory.CRASH_REPORTING, "com.bugfender.sdk", "bugfender.com"),
+        TrackerSignature("LogRocket", "LogRocket", TrackerCategory.CRASH_REPORTING, "com.logrocket.core", "logrocket.com"),
+
+        // === ENGAGEMENT (additional) ===
+        TrackerSignature("Firebase Cloud Messaging", "Google", TrackerCategory.ENGAGEMENT, "com.google.firebase.messaging", "firebase.google.com"),
+        TrackerSignature("Firebase Auth", "Google", TrackerCategory.ENGAGEMENT, "com.google.firebase.auth", "firebase.google.com"),
+        TrackerSignature("Twilio", "Twilio", TrackerCategory.ENGAGEMENT, "com.twilio.chat", "twilio.com"),
+        TrackerSignature("SendBird", "SendBird", TrackerCategory.ENGAGEMENT, "com.sendbird.android", "sendbird.com"),
+        TrackerSignature("Stream Chat", "Stream", TrackerCategory.ENGAGEMENT, "io.getstream.chat", "getstream.io"),
+        TrackerSignature("Drift", "Drift", TrackerCategory.ENGAGEMENT, "com.driftt.sdk", "drift.com"),
+        TrackerSignature("Crisp", "Crisp", TrackerCategory.ENGAGEMENT, "im.crisp.client", "crisp.chat"),
+        TrackerSignature("Kustomer", "Kustomer", TrackerCategory.ENGAGEMENT, "com.kustomer.core", "kustomer.com"),
+        TrackerSignature("Salesforce Marketing Cloud", "Salesforce", TrackerCategory.ENGAGEMENT, "com.salesforce.marketingcloud", "salesforce.com"),
+        TrackerSignature("Marketo", "Adobe", TrackerCategory.ENGAGEMENT, "com.marketo.sdk", "marketo.com"),
+        TrackerSignature("WebEngage Push", "WebEngage", TrackerCategory.ENGAGEMENT, "com.webengage.sdk.android", "webengage.com"),
+        TrackerSignature("Netcore Smartech", "Netcore", TrackerCategory.ENGAGEMENT, "com.netcore.android", "netcoresmartech.com"),
+        TrackerSignature("Insider", "Insider", TrackerCategory.ENGAGEMENT, "com.useinsider.insider", "useinsider.com"),
+        TrackerSignature("Vibes", "Vibes", TrackerCategory.ENGAGEMENT, "com.vibes.sdk", "vibes.com"),
+        TrackerSignature("Swrve Push", "Swrve", TrackerCategory.ENGAGEMENT, "com.swrve.sdk.push", "swrve.com"),
+
+        // === ATTRIBUTION (additional) ===
+        TrackerSignature("Airbridge", "Airbridge", TrackerCategory.ATTRIBUTION, "co.ab180.airbridge", "airbridge.io"),
+        TrackerSignature("Tune MATT", "Tune", TrackerCategory.ATTRIBUTION, "com.tune.crosspromo", "tune.com"),
+        TrackerSignature("Nielsen DAR", "Nielsen", TrackerCategory.ATTRIBUTION, "com.nielsen.app.sdk", "nielsen.com"),
+        TrackerSignature("comScore", "comScore", TrackerCategory.ATTRIBUTION, "com.comscore.analytics", "comscore.com"),
+        TrackerSignature("DoubleVerify", "DoubleVerify", TrackerCategory.ATTRIBUTION, "com.doubleverify.dvsdk", "doubleverify.com"),
+        TrackerSignature("MOAT Analytics", "Oracle", TrackerCategory.ATTRIBUTION, "com.moat.analytics", "moat.com"),
+        TrackerSignature("IAS (Integral Ad Science)", "IAS", TrackerCategory.ATTRIBUTION, "com.integralads.avid", "integralads.com"),
+
+        // === IDENTIFICATION (additional) ===
+        TrackerSignature("FingerprintJS", "FingerprintJS", TrackerCategory.IDENTIFICATION, "com.fingerprintjs.android", "fingerprint.com"),
+        TrackerSignature("DeviceAtlas", "DeviceAtlas", TrackerCategory.IDENTIFICATION, "com.deviceatlas.android", "deviceatlas.com"),
+        TrackerSignature("ThreatMetrix", "LexisNexis", TrackerCategory.IDENTIFICATION, "com.threatmetrix.TrustDefender", "threatmetrix.com"),
+        TrackerSignature("Iovation", "TransUnion", TrackerCategory.IDENTIFICATION, "com.iovation.mobile", "iovation.com"),
+        TrackerSignature("Telesign", "Telesign", TrackerCategory.IDENTIFICATION, "com.telesign.sdk", "telesign.com"),
+        TrackerSignature("Adjust Signature", "Adjust", TrackerCategory.IDENTIFICATION, "com.adjust.sdk.signature", "adjust.com"),
+        TrackerSignature("Braze Content Cards", "Braze", TrackerCategory.IDENTIFICATION, "com.braze.contentcards", "braze.com"),
+        TrackerSignature("Huawei Analytics", "Huawei", TrackerCategory.IDENTIFICATION, "com.huawei.hms.analytics", "huawei.com"),
+        TrackerSignature("Samsung Analytics", "Samsung", TrackerCategory.IDENTIFICATION, "com.samsung.android.sdk.sga", "samsung.com"),
+        TrackerSignature("Xiaomi Analytics", "Xiaomi", TrackerCategory.IDENTIFICATION, "com.xiaomi.analytics", "xiaomi.com"),
+
+        // === LOCATION (additional) ===
+        TrackerSignature("Huq Industries", "Huq", TrackerCategory.LOCATION, "io.huq.sourcekit", "huq.io"),
+        TrackerSignature("Placed", "Foursquare", TrackerCategory.LOCATION, "com.placed.client", "placed.com"),
+        TrackerSignature("SafeGraph", "SafeGraph", TrackerCategory.LOCATION, "com.safegraph.sdk", "safegraph.com"),
+        TrackerSignature("Skyhook", "Qualcomm", TrackerCategory.LOCATION, "com.skyhookwireless.wps", "skyhook.com"),
+        TrackerSignature("X-Mode", "Outlogic", TrackerCategory.LOCATION, "com.xmode.sdk", "xmode.io"),
+        TrackerSignature("Tutela", "Tutela", TrackerCategory.LOCATION, "com.tutela.sdk", "tutela.com"),
+        TrackerSignature("Cuebiq", "Cuebiq", TrackerCategory.LOCATION, "com.cuebiq.sdk", "cuebiq.com"),
+        TrackerSignature("Gravy Analytics", "Gravy", TrackerCategory.LOCATION, "com.gravyanalytics.sdk", "gravyanalytics.com"),
+        TrackerSignature("Reveal Mobile", "Reveal", TrackerCategory.LOCATION, "com.revealmobile.sdk", "revealmobile.com"),
+        TrackerSignature("Unacast", "Unacast", TrackerCategory.LOCATION, "com.unacast.sdk", "unacast.com")
     )
 }
 

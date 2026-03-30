@@ -1,6 +1,7 @@
 package com.blueth.guard.ui.screens
 
 import android.content.Context
+import android.content.Intent
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -90,6 +91,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.blueth.guard.R
+import com.blueth.guard.accessibility.GuardAccessibilityService
 import com.blueth.guard.optimizer.AppCacheInfo
 import com.blueth.guard.optimizer.BloatwareAction
 import com.blueth.guard.optimizer.BloatwareApp
@@ -360,6 +362,33 @@ private fun OverviewTab(viewModel: OptimizerViewModel, context: Context) {
     val killableProcesses by viewModel.killableProcesses.collectAsState()
     var isRefreshing by remember { mutableStateOf(false) }
     var showOptimizeConfirm by remember { mutableStateOf(false) }
+    var showAccessibilityPrompt by remember { mutableStateOf(false) }
+
+    if (showAccessibilityPrompt) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showAccessibilityPrompt = false },
+            title = { Text("Enable Accessibility Access") },
+            text = {
+                Text(
+                    "Enable Accessibility Access to let Blueth Guard automatically force-stop apps " +
+                    "and clear caches. Without it, we can only kill background processes and open " +
+                    "Settings for manual cache clearing."
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showAccessibilityPrompt = false
+                    context.startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                }) { Text("Enable Now") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = {
+                    showAccessibilityPrompt = false
+                    showOptimizeConfirm = true
+                }) { Text("Continue Without") }
+            }
+        )
+    }
 
     if (showOptimizeConfirm) {
         androidx.compose.material3.AlertDialog(
@@ -455,7 +484,13 @@ private fun OverviewTab(viewModel: OptimizerViewModel, context: Context) {
             // One-tap optimize
             item {
                 Button(
-                    onClick = { showOptimizeConfirm = true },
+                    onClick = {
+                        if (!GuardAccessibilityService.isServiceEnabled(context)) {
+                            showAccessibilityPrompt = true
+                        } else {
+                            showOptimizeConfirm = true
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),

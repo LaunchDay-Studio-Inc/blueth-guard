@@ -79,7 +79,8 @@ class GuardVpnService : VpnService() {
                 .addAddress("10.0.0.2", 32)
                 .addDnsServer("8.8.8.8")
                 .addDnsServer("8.8.4.4")
-                .addRoute("0.0.0.0", 0)
+                .addRoute("8.8.8.8", 32)    // Only route DNS server traffic through tunnel
+                .addRoute("8.8.4.4", 32)    // Secondary DNS
                 .setMtu(1500)
                 .setBlocking(true)
 
@@ -119,11 +120,9 @@ class GuardVpnService : VpnService() {
 
                 val packet = buffer.copyOf(length)
 
-                // Check if it's a UDP packet to port 53 (DNS)
                 if (isDnsQuery(packet)) {
                     val domain = extractDomainFromDns(packet)
                     if (domain != null && DnsBlocklist.isBlocked(domain)) {
-                        // Send NXDOMAIN response
                         blockedCount++
                         val response = buildNxDomainResponse(packet)
                         if (response != null) {
@@ -133,18 +132,120 @@ class GuardVpnService : VpnService() {
                         updateNotification()
                         continue
                     }
+
+                    // Forward allowed DNS queries to real DNS server
+                    val dnsResponse = forwardDnsQuery(packet)
+                    if (dnsResponse != null) {
+                        outputStream.write(dnsResponse)
+                        outputStream.flush()
+                    }
+                    continue
                 }
 
-                // Forward allowed packets
-                // For a lightweight DNS-only filter, we forward by writing back
-                // In a full implementation, we'd forward to the real DNS server
-                // For simplicity, pass through all non-blocked traffic
-                outputStream.write(packet)
-                outputStream.flush()
+                // Non-DNS traffic: with DNS-only routing, this should rarely arrive.
+                // Drop silently — only DNS server IPs are routed through tunnel.
             } catch (_: Exception) {
                 if (!isRunning) break
             }
         }
+    }
+
+    private fun forwardDnsQuery(originalPacket: ByteArray): ByteArray? {
+        try {
+            val ipHeaderLength = (originalPacket[0].toInt() and 0x0F) * 4
+            val udpStart = ipHeaderLength
+            val dnsPayloadStart = udpStart + 8
+            val dnsPayload = originalPacket.copyOfRange(dnsPayloadStart, originalPacket.size)
+
+            // Send DNS query to real DNS server (8.8.8.8)
+            val socket = DatagramSocket()
+            protect(socket) // CRITICAL: prevents VPN from intercepting this socket
+            socket.soTimeout = 5000
+
+            val serverAddress = InetAddress.getByName("8.8.8.8")
+            val requestPacket = DatagramPacket(dnsPayload, dnsPayload.size, serverAddress, 53)
+            socket.send(requestPacket)
+
+            // Receive DNS response
+            val responseBuffer = ByteArray(4096)
+            val responsePacket = DatagramPacket(responseBuffer, responseBuffer.size)
+            socket.receive(responsePacket)
+            socket.close()
+
+            val dnsResponse = responseBuffer.copyOf(responsePacket.length)
+
+            // Rebuild the full IP+UDP+DNS response packet
+            return rebuildDnsResponsePacket(originalPacket, dnsResponse)
+        } catch (_: Exception) {
+            return null
+        }
+    }
+
+    private fun rebuildDnsResponsePacket(originalQuery: ByteArray, dnsResponse: ByteArray): ByteArray? {
+        try {
+            val ipHeaderLength = (originalQuery[0].toInt() and 0x0F) * 4
+            val udpStart = ipHeaderLength
+
+            // Total length: IP header + UDP header (8) + DNS response
+            val totalLength = ipHeaderLength + 8 + dnsResponse.size
+            val response = ByteArray(totalLength)
+
+            // Copy IP header from original query
+            System.arraycopy(originalQuery, 0, response, 0, ipHeaderLength)
+
+            // Swap source and destination IP
+            for (i in 0..3) {
+                val temp = response[12 + i]
+                response[12 + i] = response[16 + i]
+                response[16 + i] = temp
+            }
+
+            // Update total length in IP header (bytes 2-3)
+            response[2] = ((totalLength shr 8) and 0xFF).toByte()
+            response[3] = (totalLength and 0xFF).toByte()
+
+            // Recalculate IP header checksum
+            response[10] = 0
+            response[11] = 0
+            val checksum = calculateIpChecksum(response, ipHeaderLength)
+            response[10] = ((checksum shr 8) and 0xFF).toByte()
+            response[11] = (checksum and 0xFF).toByte()
+
+            // UDP header: swap source and destination ports
+            response[udpStart] = originalQuery[udpStart + 2]
+            response[udpStart + 1] = originalQuery[udpStart + 3]
+            response[udpStart + 2] = originalQuery[udpStart]
+            response[udpStart + 3] = originalQuery[udpStart + 1]
+
+            // UDP length
+            val udpLength = 8 + dnsResponse.size
+            response[udpStart + 4] = ((udpLength shr 8) and 0xFF).toByte()
+            response[udpStart + 5] = (udpLength and 0xFF).toByte()
+
+            // UDP checksum (set to 0 — optional for IPv4 UDP)
+            response[udpStart + 6] = 0
+            response[udpStart + 7] = 0
+
+            // Copy DNS response payload
+            System.arraycopy(dnsResponse, 0, response, udpStart + 8, dnsResponse.size)
+
+            return response
+        } catch (_: Exception) {
+            return null
+        }
+    }
+
+    private fun calculateIpChecksum(header: ByteArray, length: Int): Int {
+        var sum = 0
+        var i = 0
+        while (i < length) {
+            sum += ((header[i].toInt() and 0xFF) shl 8) or (header[i + 1].toInt() and 0xFF)
+            i += 2
+        }
+        while (sum shr 16 > 0) {
+            sum = (sum and 0xFFFF) + (sum shr 16)
+        }
+        return sum.inv() and 0xFFFF
     }
 
     private fun isDnsQuery(packet: ByteArray): Boolean {
